@@ -1,5 +1,5 @@
-# d3-project-template
-A template project that sets up a development environment using Webpack and D3.
+# Spectogram
+Given audio, visualizes as a spectogram in D3.
 
 ## Development instructions
 Clone this repository and run `npm install`.

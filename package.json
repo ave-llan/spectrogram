@@ -1,5 +1,5 @@
 {
-  "name": "d3-project-template",
+  "name": "spectogram-tool",
   "version": "1.0.0",
   "description": "D3 project",
   "main": "index.js",
@@ -14,7 +14,9 @@
     "url": "git+https://github.com/ave-llan/d3-project-template.git"
   },
   "keywords": [
-    "template",
+    "spectogram",
+    "music",
+    "audio",
     "d3"
   ],
   "author": "John Leszczynski",
