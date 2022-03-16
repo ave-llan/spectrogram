@@ -35,6 +35,7 @@
     "webpack-dev-server": "^4.7.4"
   },
   "dependencies": {
+    "audio-frequency": "file:../audio-frequency",
     "d3-selection": "^3.0.0"
   }
 }

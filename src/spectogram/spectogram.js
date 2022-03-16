@@ -1,4 +1,6 @@
 import * as d3Selection from 'd3-selection'
+import {getAudioFrequencyData} from 'audio-frequency'
+import robinSwift from '../data/robin-swift.wav'
 
 const WIDTH = 100,
   HEIGHT = 100
@@ -6,6 +8,20 @@ const originalTriangle = [[5, 95], [95,95], [50, 5]]
 const NUM_GENERATIONS = 16
 
 const svg = createSvg()
+
+
+getAudioFrequencyData(robinSwift,
+  {
+    sampleTimeLength      : 1/240,
+    fftSize               : 2 ** 11,
+    maxFrequency          : 11000,
+    smoothingTimeConstant : 0.8,
+  })
+  .then((data) => {
+    console.log(data)
+  })
+
+
 drawFromTriangle(originalTriangle)
 
 function createSvg() {
