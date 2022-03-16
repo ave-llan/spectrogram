@@ -1,4 +1,14 @@
+.triangle {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 0.02;
+  pointer-events: all;
+}
 
-.test {
-	color:  steelblue;
+.triangle:hover {
+  fill: lightblue;
+}
+
+.triangle .fill {
+  fill: orange;
 }
