@@ -1,2 +1,2 @@
-import './style.css';
-import './spectogram/spectogram.js';
+import './style.css'
+import './spectogram/spectogram.js'

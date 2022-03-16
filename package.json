@@ -6,8 +6,8 @@
   "scripts": {
     "build": "webpack",
     "start": "webpack serve --open",
-    "lint": "eslint --ext .js ./src/.",
-    "fix": "eslint --fix --ext .js ./src/."
+    "lint": "eslint --ext .js src/",
+    "fix": "eslint --ext .js src/ --fix"
   },
   "repository": {
     "type": "git",

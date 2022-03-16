@@ -1,18 +1,18 @@
-import * as d3Selection from "d3-selection";
+import * as d3Selection from 'd3-selection'
 
 const WIDTH = 100,
-     HEIGHT = 100
+  HEIGHT = 100
 const originalTriangle = [[5, 95], [95,95], [50, 5]]
 const NUM_GENERATIONS = 16
 
-const svg = createSvg();
+const svg = createSvg()
 drawFromTriangle(originalTriangle)
 
 function createSvg() {
   return d3Selection.select('body').append('svg')
-      .attr('width', '800px')
-      .attr('height', '800px')
-      .attr('viewBox', [0, 0, WIDTH, HEIGHT].join(' '))
+    .attr('width', '800px')
+    .attr('height', '800px')
+    .attr('viewBox', [0, 0, WIDTH, HEIGHT].join(' '))
 }
 
 function drawFromTriangle(triangle) {
@@ -24,10 +24,10 @@ function drawFromTriangle(triangle) {
 
   triangles.enter()
     .append('g')
-      .attr('class', 'triangle')
+    .attr('class', 'triangle')
     .append('path')
-      .attr('d', trianglePathDescription)
-      .on('mousedown', subdivideTriangle)
+    .attr('d', trianglePathDescription)
+    .on('mousedown', subdivideTriangle)
 }
 
 function propagate(triangle, generations) {
@@ -85,7 +85,7 @@ function scaleTriangle(triangle, fit) {
   const {width, height, minX, minY} = triangleDimensions(triangle)
   const scale = fit / Math.max(width, height)
   const [centeringX, centeringY] = [width, height]
-      .map(dimension => (fit - dimension * scale) / 2)
+    .map(dimension => (fit - dimension * scale) / 2)
 
   return triangle.map(point => 
     [(point[0] - minX) * scale + centeringX, 
