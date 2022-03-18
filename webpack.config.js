@@ -32,7 +32,7 @@ module.exports = {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      title: 'Solitaire sound exploration',
+      title: 'Spectrogram tool',
       template: 'src/index.html',
     }),
   ],

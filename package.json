@@ -1,5 +1,5 @@
 {
-  "name": "spectogram-tool",
+  "name": "spectrogram-tool",
   "version": "1.0.0",
   "description": "D3 project",
   "main": "index.js",
@@ -14,7 +14,7 @@
     "url": "git+https://github.com/ave-llan/d3-project-template.git"
   },
   "keywords": [
-    "spectogram",
+    "spectrogram",
     "music",
     "audio",
     "d3"
