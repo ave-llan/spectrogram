@@ -36,6 +36,7 @@
   },
   "dependencies": {
     "audio-frequency": "file:../audio-frequency",
+    "d3-scale": "^4.0.2",
     "d3-selection": "^3.0.0"
   }
 }

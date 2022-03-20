@@ -1,4 +1,5 @@
 import * as d3Selection from 'd3-selection'
+import * as d3Scale from 'd3-scale'
 import {getAudioFrequencyData} from 'audio-frequency'
 import robinSwift from '../data/robin-swift.wav'
 
@@ -22,8 +23,12 @@ function drawSpectrogram(data, {width = 1400, height = 400} = {}) {
     .node()
     .getContext('2d')
 
-  sonogramCtx.fillStyle = 'rgb(0, 0, 0)'
+  sonogramCtx.fillStyle = 'rgb(240, 240, 240)'
   sonogramCtx.fillRect(0, 0, width, height)
+
+  const decibleColorScale = d3Scale.scaleLinear()
+    .domain([0, 255])
+    .range(['rgba(70, 130, 180, 0)', 'rgba(70, 130, 180, 1.0)'])
 
   // Draw spectrogram
   console.log('Frequency bin count:', data[0].length)
@@ -34,9 +39,9 @@ function drawSpectrogram(data, {width = 1400, height = 400} = {}) {
     for (let y = 0; y < frequencyBinCount; y++) {
       // analyser.getByteFrequencyData returns a normalized array of values
       // between 0 and 255
-      const intensity = data[x][y] / 255
+      const intensity = data[x][y] 
       const barHeight = height / frequencyBinCount
-      sonogramCtx.fillStyle = 'hsl(228 51% ' + (intensity * 100) + '%)'
+      sonogramCtx.fillStyle = decibleColorScale(intensity)
       sonogramCtx.fillRect(
         x * barWidth,
         height - (y * barHeight),
