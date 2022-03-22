@@ -1,20 +1,23 @@
 import * as d3Selection from 'd3-selection'
 import * as d3Scale from 'd3-scale'
-import {getAudioFrequencyData} from 'audio-frequency'
+import {AudioData} from 'audio-frequency'
 import robinSwift from '../data/robin-swift.wav'
 
-getAudioFrequencyData(robinSwift,
-  {
-    sampleTimeLength      : 1/240,
+getAndDrawData(robinSwift)
+
+async function getAndDrawData(audioFile) {
+  const audioData = await AudioData.fromFile(audioFile)
+  const frequencyData = await audioData.getFrequencyData({
+    sampleTimeLength      : 1/140,
     fftSize               : 2 ** 11,
     maxFrequency          : 11000,
     smoothingTimeConstant : 0.8,
   })
-  .then(drawSpectrogram)
+  drawSpectrogramData(frequencyData.data)
+  console.log(frequencyData)
+}
 
-function drawSpectrogram(data, {width = 1400, height = 400} = {}) {
-  console.log('data ready')
-
+function drawSpectrogramData(data, {width = 1400, height = 400} = {}) {
   const sonogramCtx = d3Selection.select('body')
     .append('canvas')
     .attr('class', 'spectrogram')
@@ -27,6 +30,8 @@ function drawSpectrogram(data, {width = 1400, height = 400} = {}) {
   sonogramCtx.fillRect(0, 0, width, height)
 
   const decibleColorScale = d3Scale.scaleLinear()
+    // getAudioFrequencyData returns a normalized array of values
+    // between 0 and 255
     .domain([0, 255])
     .range(['rgba(70, 130, 180, 0)', 'rgba(70, 130, 180, 1.0)'])
 
@@ -37,8 +42,6 @@ function drawSpectrogram(data, {width = 1400, height = 400} = {}) {
   const barWidth = width / data.length
   for (let x = 0; x < data.length; x++) {
     for (let y = 0; y < frequencyBinCount; y++) {
-      // analyser.getByteFrequencyData returns a normalized array of values
-      // between 0 and 255
       const intensity = data[x][y] 
       const barHeight = height / frequencyBinCount
       sonogramCtx.fillStyle = decibleColorScale(intensity)
