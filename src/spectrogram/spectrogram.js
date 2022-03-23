@@ -70,14 +70,14 @@ function drawSpectrogramAxis(audioData, {width = 1400, height = 400} = {}) {
   const timeScale = d3Scale.scaleLinear()
     .domain([0, audioData.duration])
     // TODO remove width - 1 once using margin/padding
-    .range([0, width - 1])
+    .range([0, width])
   const timeAxis = d3Axis.axisBottom(timeScale)
-    .ticks(39)
+    .ticks(Math.floor(audioData.duration))
     // .tickSize(10)
     // .tickPadding(10)
 
   svg.append('g')
     .attr('class', 'x axis')
-    .attr('transform', 'translate(0,' + (10) + ')')
+    // .attr('transform', 'translate(0,' + (10) + ')')
     .call(timeAxis)
 }
