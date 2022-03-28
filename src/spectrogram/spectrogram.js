@@ -6,7 +6,7 @@ import robinSwift from '../data/robin-swift.wav'
 
 getAndDrawData(robinSwift)
 
-async function getAndDrawData(audioFile) {
+async function getAndDrawData(audioFile, {width = 1400, height = 400} = {}) {
   const audioData = await AudioData.fromFile(audioFile)
   const frequencyData = await audioData.getFrequencyData({
     sampleTimeLength      : 1/140,
@@ -14,20 +14,41 @@ async function getAndDrawData(audioFile) {
     maxFrequency          : 11000,
     smoothingTimeConstant : 0.8,
   })
-  drawSpectrogramData(frequencyData.data)
-  drawSpectrogramAxis(audioData)
-  console.log(frequencyData)
-}
 
-function drawSpectrogramData(data, {width = 1400, height = 400} = {}) {
-  const sonogramCtx = d3Selection.select('body')
+  // Create div container for spectrogram tool.
+  const container = d3Selection.select('body')
+    .append('div')
+    .attr('class', 'sonogramVisualizer')
+    .style('position', 'relative')
+
+  // Create outer svg that will contain the spectrogramTool
+  const svg = container
+    .append('svg')
+    .attr('class', 'spectrogramTool')
+    .attr('width', width)
+    .attr('height', height)
+  drawSpectrogramAxis({audioData, svg, width, height})
+
+  // Create canvas for drawing spectrogram data.
+  const sonogramCanvas = container
     .append('canvas')
     .attr('class', 'spectrogram')
     .attr('width', width)
     .attr('height', height)
+  sonogramCanvas
+    .style('position', 'absolute')
+    .style('left', '0px')
+    .style('top', '20px')
+  const sonogramCtx = sonogramCanvas
     .node()
     .getContext('2d')
 
+  drawSpectrogramData(frequencyData.data, {sonogramCtx})
+
+  console.log(frequencyData)
+}
+
+function drawSpectrogramData(data, {sonogramCtx, width = 1400, height = 400} = {}) {
   sonogramCtx.fillStyle = 'rgb(240, 240, 240)'
   sonogramCtx.fillRect(0, 0, width, height)
 
@@ -59,13 +80,7 @@ function drawSpectrogramData(data, {width = 1400, height = 400} = {}) {
 /**
  * @param {AudioData} audioData
  */
-function drawSpectrogramAxis(audioData, {width = 1400, height = 400} = {}) {
-  const svg = d3Selection.select('body')
-    .append('svg')
-    .attr('width', width)
-    .attr('height', height)
-    // TODO to change position of axis with respect to chart, specify a transform attribute
-
+function drawSpectrogramAxis({audioData, svg, width = 1400, height = 400} = {}) {
   console.log('audioData.duration:', audioData.duration)
   const timeScale = d3Scale.scaleLinear()
     .domain([0, audioData.duration])
@@ -73,8 +88,6 @@ function drawSpectrogramAxis(audioData, {width = 1400, height = 400} = {}) {
     .range([0, width])
   const timeAxis = d3Axis.axisBottom(timeScale)
     .ticks(Math.floor(audioData.duration))
-    // .tickSize(10)
-    // .tickPadding(10)
 
   svg.append('g')
     .attr('class', 'x axis')
