@@ -15,7 +15,7 @@ async function getAndDrawData(audioFile, {width = 1400, height = 400} = {}) {
     smoothingTimeConstant : 0.8,
   })
 
-  const margin = {top: 40, right: 40, bottom: 40, left: 40},
+  const margin = {top: 20, right: 20, bottom: 20, left: 20},
     spectroWidth = width - margin.left - margin.right,
     spectroHeight = height - margin.top - margin.bottom
 
