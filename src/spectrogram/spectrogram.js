@@ -15,7 +15,11 @@ async function getAndDrawData(audioFile, {width = 1400, height = 400} = {}) {
     smoothingTimeConstant : 0.8,
   })
 
-  // Create div container for spectrogram tool.
+  const margin = {top: 40, right: 40, bottom: 40, left: 40},
+    spectroWidth = width - margin.left - margin.right,
+    spectroHeight = height - margin.top - margin.bottom
+
+  // Create div container forr spectrogram tool.
   const container = d3Selection.select('body')
     .append('div')
     .attr('class', 'sonogramVisualizer')
@@ -25,17 +29,17 @@ async function getAndDrawData(audioFile, {width = 1400, height = 400} = {}) {
   const sonogramCanvas = container
     .append('canvas')
     .attr('class', 'spectrogram')
-    .attr('width', width)
-    .attr('height', height)
+    .attr('width', spectroWidth)
+    .attr('height', spectroHeight)
   sonogramCanvas
     .style('position', 'absolute')
-    .style('left', '0px')
-    .style('top', '0px')
+    .style('left', `${margin.left}px`)
+    .style('top', `${margin.top}px`)
   const sonogramCtx = sonogramCanvas
     .node()
     .getContext('2d')
 
-  drawSpectrogramData(frequencyData.data, {sonogramCtx})
+  drawSpectrogramData(frequencyData.data, {sonogramCtx, width: spectroWidth, height: spectroHeight})
 
   // Create svg that will contain the axis
   const svg = container
@@ -43,8 +47,8 @@ async function getAndDrawData(audioFile, {width = 1400, height = 400} = {}) {
     .attr('class', 'spectrogramTool')
     .style('position', 'absolute')
     .attr('width', width)
-    .attr('height', height)
-  drawSpectrogramAxis({audioData, svg, width, height})
+    .attr('height', height + 20)
+  drawSpectrogramAxis({audioData, svg, width, height, spectrogramMargin: margin})
 
   console.log(frequencyData)
 }
@@ -81,16 +85,18 @@ function drawSpectrogramData(data, {sonogramCtx, width = 1400, height = 400} = {
 /**
  * @param {AudioData} audioData
  */
-function drawSpectrogramAxis({audioData, svg, width = 1400, height = 400} = {}) {
+function drawSpectrogramAxis({audioData, svg, width = 1400, height = 400, spectrogramMargin} = {}) {
   console.log('audioData.duration:', audioData.duration)
+  const spectrogramWidth = width - spectrogramMargin.left - spectrogramMargin.right 
+  const spectrogramWHeight = height - spectrogramMargin.top - spectrogramMargin.bottom
   const timeScale = d3Scale.scaleLinear()
     .domain([0, audioData.duration])
-    .range([0, width])
+    .range([0, spectrogramWidth])
   const timeAxis = d3Axis.axisBottom(timeScale)
     .ticks(Math.floor(audioData.duration))
 
   svg.append('g')
     .attr('class', 'x axis')
-    .attr('transform', `translate(0,${10})`)
+    .attr('transform', `translate(${spectrogramMargin.left},${height - spectrogramMargin.bottom})`)
     .call(timeAxis)
 }
