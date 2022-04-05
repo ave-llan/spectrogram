@@ -15,7 +15,7 @@ async function getAndDrawData(audioFile, {width = 1400, height = 400} = {}) {
     smoothingTimeConstant : 0.8,
   })
 
-  const margin = {top: 20, right: 20, bottom: 20, left: 40},
+  const margin = {top: 20, right: 20, bottom: 40, left: 40},
     spectroWidth = width - margin.left - margin.right,
     spectroHeight = height - margin.top - margin.bottom
 
@@ -100,6 +100,14 @@ function drawSpectrogramAxis({frequencyData, svg, width = 1400, height = 400, sp
     .attr('class', 'xAxis')
     .attr('transform', `translate(${spectrogramMargin.left},${height - spectrogramMargin.bottom})`)
     .call(timeAxis)
+    // Add label for axis
+    .append('g')
+    .append('text')
+    // Position axis label with enough room below axis ticks
+    .attr('transform', `translate(${spectrogramWidth},${30})`)
+    .attr('fill', 'black')
+    .attr('text-anchor', 'end')
+    .text('seconds  →')
 
   // Add y axis (frequency scale)
   const frequencyScale = d3Scale.scaleLinear()
@@ -107,8 +115,19 @@ function drawSpectrogramAxis({frequencyData, svg, width = 1400, height = 400, sp
     .range([spectrogramWHeight, 0])
   const frequencyAxis = d3Axis.axisLeft(frequencyScale)
     .ticks(10)
+    // convert to kHz
+    .tickFormat(hz => `${hz / 1000}`)
+
   svg.append('g')
     .attr('class', 'yAxis')
     .attr('transform', `translate(${spectrogramMargin.left},${spectrogramMargin.top})`)
     .call(frequencyAxis)
+    // Add label for axis
+    .append('g')
+    .append('text')
+    // Position axis label so arrow roughly aligns with y axis
+    .attr('transform', `translate(${-3},${-5})`)
+    .attr('fill', 'black')
+    .attr('text-anchor', 'start')
+    .text('↑ kHz')
 }
