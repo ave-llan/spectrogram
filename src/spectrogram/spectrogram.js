@@ -15,7 +15,7 @@ async function getAndDrawData(audioFile, {width = 1400, height = 400} = {}) {
     smoothingTimeConstant : 0.8,
   })
 
-  const margin = {top: 20, right: 20, bottom: 20, left: 20},
+  const margin = {top: 20, right: 20, bottom: 20, left: 40},
     spectroWidth = width - margin.left - margin.right,
     spectroHeight = height - margin.top - margin.bottom
 
@@ -48,7 +48,7 @@ async function getAndDrawData(audioFile, {width = 1400, height = 400} = {}) {
     .style('position', 'absolute')
     .attr('width', width)
     .attr('height', height + 20)
-  drawSpectrogramAxis({audioData, svg, width, height, spectrogramMargin: margin})
+  drawSpectrogramAxis({frequencyData, svg, width, height, spectrogramMargin: margin})
 
   console.log(frequencyData)
 }
@@ -83,20 +83,32 @@ function drawSpectrogramData(data, {sonogramCtx, width = 1400, height = 400} = {
 }
 
 /**
- * @param {AudioData} audioData
+ * @param {!FrequencyData} frequencyData
  */
-function drawSpectrogramAxis({audioData, svg, width = 1400, height = 400, spectrogramMargin} = {}) {
-  console.log('audioData.duration:', audioData.duration)
+function drawSpectrogramAxis({frequencyData, svg, width = 1400, height = 400, spectrogramMargin} = {}) {
+  console.log('frequencyData.duration:', frequencyData.duration)
   const spectrogramWidth = width - spectrogramMargin.left - spectrogramMargin.right 
   const spectrogramWHeight = height - spectrogramMargin.top - spectrogramMargin.bottom
+
+  // Add x axis (time scale)
   const timeScale = d3Scale.scaleLinear()
-    .domain([0, audioData.duration])
+    .domain([0, frequencyData.duration])
     .range([0, spectrogramWidth])
   const timeAxis = d3Axis.axisBottom(timeScale)
-    .ticks(Math.floor(audioData.duration))
-
+    .ticks(Math.floor(frequencyData.duration))
   svg.append('g')
-    .attr('class', 'x axis')
+    .attr('class', 'xAxis')
     .attr('transform', `translate(${spectrogramMargin.left},${height - spectrogramMargin.bottom})`)
     .call(timeAxis)
+
+  // Add y axis (frequency scale)
+  const frequencyScale = d3Scale.scaleLinear()
+    .domain([frequencyData.minFrequency, frequencyData.maxFrequency])
+    .range([spectrogramWHeight, 0])
+  const frequencyAxis = d3Axis.axisLeft(frequencyScale)
+    .ticks(10)
+  svg.append('g')
+    .attr('class', 'yAxis')
+    .attr('transform', `translate(${spectrogramMargin.left},${spectrogramMargin.top})`)
+    .call(frequencyAxis)
 }
