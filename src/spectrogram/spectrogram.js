@@ -4,6 +4,7 @@ import * as d3Scale from 'd3-scale'
 import {AudioData} from 'audio-frequency'
 import robinSwift from '../data/robin-swift.wav'
 import playIcon from '../resources/play_icon.svg'
+import stopIcon from '../resources/stop_icon.svg'
 
 getAndDrawData(robinSwift)
 
@@ -138,17 +139,25 @@ function drawSpectrogramAxis({frequencyData, svg, width = 1400, height = 400, sp
 
 function addPlaybackButtons({svg, width, spectroMargin, iconSize = 30}) {
   const spectroPadding = 5
+  let playbackActive = false
   const playbackIcon = svg.append('g')
-    .attr('class', 'playback-icon')
+    .attr('class', 'play-icon')
     .attr('transform', `translate(${width - (iconSize + spectroMargin.right)},${spectroMargin.top - spectroPadding - iconSize})`)
     .on('click', () => {
       console.log('clicked playback')
+      updatePlaybackIcon(!playbackActive)
+      playbackActive = !playbackActive
     })
 
   playbackIcon.append('image')
-    .attr('id', 'play-icon')
+    .attr('id', 'playback-icon')
     .attr('width', iconSize)
     .attr('height', iconSize)
     .attr('xlink:href', playIcon)
     .attr('opacity', 0.25)
+
+  function updatePlaybackIcon(isBeingPlayedBack) {
+    d3Selection.select('#playback-icon')
+      .attr('xlink:href', isBeingPlayedBack ? stopIcon : playIcon)
+  }
 }
