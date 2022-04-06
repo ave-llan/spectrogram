@@ -3,6 +3,7 @@ import * as d3Selection from 'd3-selection'
 import * as d3Scale from 'd3-scale'
 import {AudioData} from 'audio-frequency'
 import robinSwift from '../data/robin-swift.wav'
+import playIcon from '../resources/play_icon.svg'
 
 getAndDrawData(robinSwift)
 
@@ -15,7 +16,7 @@ async function getAndDrawData(audioFile, {width = 1400, height = 400} = {}) {
     smoothingTimeConstant : 0.8,
   })
 
-  const margin = {top: 20, right: 20, bottom: 40, left: 40},
+  const margin = {top: 40, right: 20, bottom: 40, left: 40},
     spectroWidth = width - margin.left - margin.right,
     spectroHeight = height - margin.top - margin.bottom
 

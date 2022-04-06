@@ -25,6 +25,10 @@ module.exports = {
         use: ['style-loader', 'css-loader'],
       },
       {
+        test: /\.(svg)$/i,
+        type: 'asset/resource',
+      },
+      {
         test: /\.(wav|mp3|ogg)$/i,
         type: 'asset/resource',
       },
