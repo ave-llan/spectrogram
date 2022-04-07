@@ -150,7 +150,10 @@ function addPlaybackButtons({audioBuffer, svg, width, spectroMargin, iconSize = 
       updatePlaybackIcon(!playbackActive)
       playbackActive = !playbackActive
       if (playbackActive) {
-        playbackNode = playBuffer(audioBuffer)
+        playbackNode = playBuffer(audioBuffer, () => {
+          updatePlaybackIcon(false)
+          playbackActive = false
+        })
       } else if (playbackNode) {
         playbackNode.stop()
       }
@@ -172,11 +175,15 @@ function addPlaybackButtons({audioBuffer, svg, width, spectroMargin, iconSize = 
 /**
  * Plays the provided audio buffer.
  * @param {!AudioBuffer} buffer
- * @return {!AudioBufferSourceNode} the node where playback was started. May be used to call stop().
+ * @param {!Function} function to call when playback has ended
+ * @return {!AudioBufferSourceNode} the node where playback was started. 
+ *     May be used to call stop() or listen for onEnded.
  */
-function playBuffer(buffer) {
+function playBuffer(buffer, onEnded) {
   const audioContext = new AudioContext()
   const source = new AudioBufferSourceNode(audioContext, {buffer})
+  source.onended = onEnded
+
   source.connect(audioContext.destination)
   source.start()
 
