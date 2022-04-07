@@ -140,15 +140,19 @@ function drawSpectrogramAxis({frequencyData, svg, width = 1400, height = 400, sp
 function addPlaybackButtons({audioBuffer, svg, width, spectroMargin, iconSize = 30}) {
   const spectroPadding = 5
   let playbackActive = false
+  let playbackNode
   const playbackIcon = svg.append('g')
     .attr('class', 'play-icon')
-    .attr('transform', `translate(${width - (iconSize + spectroMargin.right)},${spectroMargin.top - spectroPadding - iconSize})`)
+    .attr('transform', 
+      `translate(${width - (iconSize + spectroMargin.right)},${spectroMargin.top - spectroPadding - iconSize})`)
     .on('click', () => {
       console.log('clicked playback')
       updatePlaybackIcon(!playbackActive)
       playbackActive = !playbackActive
       if (playbackActive) {
-        playBuffer(audioBuffer)
+        playbackNode = playBuffer(audioBuffer)
+      } else if (playbackNode) {
+        playbackNode.stop()
       }
     })
 
@@ -168,10 +172,13 @@ function addPlaybackButtons({audioBuffer, svg, width, spectroMargin, iconSize = 
 /**
  * Plays the provided audio buffer.
  * @param {!AudioBuffer} buffer
+ * @return {!AudioBufferSourceNode} the node where playback was started. May be used to call stop().
  */
 function playBuffer(buffer) {
   const audioContext = new AudioContext()
   const source = new AudioBufferSourceNode(audioContext, {buffer})
   source.connect(audioContext.destination)
   source.start()
+
+  return source
 }
