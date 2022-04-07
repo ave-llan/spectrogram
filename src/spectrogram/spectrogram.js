@@ -51,7 +51,7 @@ async function getAndDrawData(audioFile, {width = 1400, height = 400} = {}) {
     .attr('width', width)
     .attr('height', height + 20)
   drawSpectrogramAxis({frequencyData, svg, width, height, spectroMargin})
-  addPlaybackButtons({svg, width, spectroMargin})
+  addPlaybackButtons({audioBuffer: audioData.buffer, svg, width, spectroMargin})
   console.log(frequencyData)
 }
 
@@ -137,7 +137,7 @@ function drawSpectrogramAxis({frequencyData, svg, width = 1400, height = 400, sp
 
 }
 
-function addPlaybackButtons({svg, width, spectroMargin, iconSize = 30}) {
+function addPlaybackButtons({audioBuffer, svg, width, spectroMargin, iconSize = 30}) {
   const spectroPadding = 5
   let playbackActive = false
   const playbackIcon = svg.append('g')
@@ -147,6 +147,9 @@ function addPlaybackButtons({svg, width, spectroMargin, iconSize = 30}) {
       console.log('clicked playback')
       updatePlaybackIcon(!playbackActive)
       playbackActive = !playbackActive
+      if (playbackActive) {
+        playBuffer(audioBuffer)
+      }
     })
 
   playbackIcon.append('image')
@@ -160,4 +163,15 @@ function addPlaybackButtons({svg, width, spectroMargin, iconSize = 30}) {
     d3Selection.select('#playback-icon')
       .attr('xlink:href', isBeingPlayedBack ? stopIcon : playIcon)
   }
+}
+
+/**
+ * Plays the provided audio buffer.
+ * @param {!AudioBuffer} buffer
+ */
+function playBuffer(buffer) {
+  const audioContext = new AudioContext()
+  const source = new AudioBufferSourceNode(audioContext, {buffer})
+  source.connect(audioContext.destination)
+  source.start()
 }
