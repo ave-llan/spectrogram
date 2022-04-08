@@ -1,6 +1,8 @@
 import * as d3Axis from 'd3-axis'
+import * as d3Ease from 'd3-ease'
 import * as d3Selection from 'd3-selection'
 import * as d3Scale from 'd3-scale'
+import * as d3Transition from 'd3-transition'
 import {AudioData} from 'audio-frequency'
 import robinSwift from '../data/robin-swift.wav'
 import playIcon from '../resources/play_icon.svg'
@@ -51,7 +53,7 @@ async function getAndDrawData(audioFile, {width = 1400, height = 400} = {}) {
     .attr('width', width)
     .attr('height', height + 20)
   drawSpectrogramAxis({frequencyData, svg, width, height, spectroMargin})
-  addPlaybackButtons({audioBuffer: audioData.buffer, svg, width, spectroMargin})
+  addPlaybackButtons({audioBuffer: audioData.buffer, svg, height, width, spectroMargin})
   console.log(frequencyData)
 }
 
@@ -137,16 +139,16 @@ function drawSpectrogramAxis({frequencyData, svg, width = 1400, height = 400, sp
 
 }
 
-function addPlaybackButtons({audioBuffer, svg, width, spectroMargin, iconSize = 30}) {
+function addPlaybackButtons({audioBuffer, svg, height, width, spectroMargin, iconSize = 30}) {
   const spectroPadding = 5
   let playbackActive = false
   let playbackNode
+  let playbackLine
   const playbackIcon = svg.append('g')
     .attr('class', 'play-icon')
     .attr('transform', 
       `translate(${width - (iconSize + spectroMargin.right)},${spectroMargin.top - spectroPadding - iconSize})`)
     .on('click', () => {
-      console.log('clicked playback')
       updatePlaybackIcon(!playbackActive)
       playbackActive = !playbackActive
       if (playbackActive) {
@@ -154,6 +156,26 @@ function addPlaybackButtons({audioBuffer, svg, width, spectroMargin, iconSize = 
           updatePlaybackIcon(false)
           playbackActive = false
         })
+
+
+        // Draw a vertical line to show current position of playback
+        const transition = d3Transition.transition()
+          .duration(audioBuffer.duration * 1000)
+          .ease(d3Ease.easeLinear)
+        playbackLine = svg
+          .append('g')
+          .attr('class', 'playbackPositionLine')
+          .append('line')
+          .attr('x1', spectroMargin.left)
+          .attr('x2', spectroMargin.left)
+          .attr('y1', spectroMargin.top)
+          .attr('y2', height - spectroMargin.bottom)
+          .attr('stroke', 'black')
+
+        playbackLine.transition(transition)
+          .attr('x1', width - spectroMargin.right)
+          .attr('x2', width - spectroMargin.right)
+
       } else if (playbackNode) {
         playbackNode.stop()
       }
