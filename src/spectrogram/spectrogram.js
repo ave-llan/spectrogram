@@ -149,33 +149,14 @@ function addPlaybackButtons({audioBuffer, svg, height, width, spectroMargin, ico
     .attr('transform', 
       `translate(${width - (iconSize + spectroMargin.right)},${spectroMargin.top - spectroPadding - iconSize})`)
     .on('click', () => {
-      updatePlaybackIcon(!playbackActive)
+      updatePlaybackButtonAndLine(!playbackActive)
       playbackActive = !playbackActive
       if (playbackActive) {
         playbackNode = playBuffer(audioBuffer, () => {
-          updatePlaybackIcon(false)
+          updatePlaybackButtonAndLine(false)
           playbackActive = false
         })
-
-
-        // Draw a vertical line to show current position of playback
-        const transition = d3Transition.transition()
-          .duration(audioBuffer.duration * 1000)
-          .ease(d3Ease.easeLinear)
-        playbackLine = svg
-          .append('g')
-          .attr('class', 'playbackPositionLine')
-          .append('line')
-          .attr('x1', spectroMargin.left)
-          .attr('x2', spectroMargin.left)
-          .attr('y1', spectroMargin.top)
-          .attr('y2', height - spectroMargin.bottom)
-          .attr('stroke', 'black')
-
-        playbackLine.transition(transition)
-          .attr('x1', width - spectroMargin.right)
-          .attr('x2', width - spectroMargin.right)
-
+        createPlaybackLine()
       } else if (playbackNode) {
         playbackNode.stop()
       }
@@ -188,9 +169,33 @@ function addPlaybackButtons({audioBuffer, svg, height, width, spectroMargin, ico
     .attr('xlink:href', playIcon)
     .attr('opacity', 0.25)
 
-  function updatePlaybackIcon(isBeingPlayedBack) {
+  function updatePlaybackButtonAndLine(isBeingPlayedBack) {
     d3Selection.select('#playback-icon')
       .attr('xlink:href', isBeingPlayedBack ? stopIcon : playIcon)
+    if (playbackLine) playbackLine.remove()
+  }
+
+  /** 
+   * Creates a line to show the current playback position and animates it.
+   */
+  function createPlaybackLine() {
+    // Draw a vertical line to show current position of playback
+    const transition = d3Transition.transition()
+      .duration(audioBuffer.duration * 1000)
+      .ease(d3Ease.easeLinear)
+    playbackLine = svg
+      .append('g')
+      .attr('class', 'playbackPositionLine')
+      .append('line')
+      .attr('x1', spectroMargin.left)
+      .attr('x2', spectroMargin.left)
+      .attr('y1', spectroMargin.top)
+      .attr('y2', height - spectroMargin.bottom)
+      .attr('stroke', 'black')
+
+    playbackLine.transition(transition)
+      .attr('x1', width - spectroMargin.right)
+      .attr('x2', width - spectroMargin.right)
   }
 }
 
