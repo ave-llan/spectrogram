@@ -11,6 +11,10 @@ module.exports = {
     hot: true,
     open: true,
     watchFiles: ['src/*'],
+    allowedHosts: [
+      // Add your computer hostname for testing on other devices.
+      'aveland.local',
+    ],
   },
   output: {
     filename: '[name].bundle.js',
