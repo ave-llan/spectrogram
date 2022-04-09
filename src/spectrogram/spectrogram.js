@@ -10,7 +10,7 @@ import stopIcon from '../resources/stop_icon.svg'
 
 getAndDrawData(robinSwift)
 
-async function getAndDrawData(audioFile, {width = 1400, height = 400} = {}) {
+async function getAndDrawData(audioFile, {width = 1300, height = 400} = {}) {
   const audioData = await AudioData.fromFile(audioFile)
   const frequencyData = await audioData.getFrequencyData({
     sampleTimeLength      : 1/140,
