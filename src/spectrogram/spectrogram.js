@@ -143,7 +143,21 @@ function addPlaybackButtons({audioBuffer, svg, height, width, spectroMargin, ico
   const spectroPadding = 5
   let playbackActive = false
   let playbackNode
-  let playbackLine
+  let playbackLineAnimationId
+  let playbackStartedAt
+  const audioContext = new AudioContext()
+
+  const playbackLine = svg
+    .append('g')
+    .attr('class', 'playbackPositionLine')
+    .append('line')
+    .attr('x1', spectroMargin.left)
+    .attr('x2', spectroMargin.left)
+    .attr('y1', spectroMargin.top)
+    .attr('y2', height - spectroMargin.bottom)
+    .attr('stroke', 'black')
+    .attr('opacity', 0)
+
   const playbackIcon = svg.append('g')
     .attr('class', 'play-icon')
     .attr('transform', 
@@ -152,11 +166,15 @@ function addPlaybackButtons({audioBuffer, svg, height, width, spectroMargin, ico
       updatePlaybackButtonAndLine(!playbackActive)
       playbackActive = !playbackActive
       if (playbackActive) {
-        playbackNode = playBuffer(audioBuffer, () => {
-          updatePlaybackButtonAndLine(false)
-          playbackActive = false
-        })
-        createPlaybackLine()
+        playbackNode = playBuffer({
+          audioContext,
+          buffer  : audioBuffer,
+          onEnded : () => {
+            updatePlaybackButtonAndLine(false)
+            playbackActive = false
+          }})
+        playbackStartedAt = audioContext.currentTime
+        animatePlaybackLine()
       } else if (playbackNode) {
         playbackNode.stop()
       }
@@ -169,45 +187,47 @@ function addPlaybackButtons({audioBuffer, svg, height, width, spectroMargin, ico
     .attr('xlink:href', playIcon)
     .attr('opacity', 0.25)
 
+
   function updatePlaybackButtonAndLine(isBeingPlayedBack) {
     d3Selection.select('#playback-icon')
       .attr('xlink:href', isBeingPlayedBack ? stopIcon : playIcon)
-    if (playbackLine) playbackLine.remove()
+    playbackLine 
+      .attr('opacity', isBeingPlayedBack ? 1.0 : 0.0)
+
+    if (!isBeingPlayedBack) {
+      cancelAnimationFrame(playbackLineAnimationId)
+    }
   }
 
   /** 
-   * Creates a line to show the current playback position and animates it.
+   * Creates and animates a line to show the current playback position and animates it.
+   * @return {number} the requestAnimationFrame ID for cancelling 
    */
-  function createPlaybackLine() {
+  function animatePlaybackLine() {
     // Draw a vertical line to show current position of playback
-    const transition = d3Transition.transition()
-      .duration(audioBuffer.duration * 1000)
-      .ease(d3Ease.easeLinear)
-    playbackLine = svg
-      .append('g')
-      .attr('class', 'playbackPositionLine')
-      .append('line')
-      .attr('x1', spectroMargin.left)
-      .attr('x2', spectroMargin.left)
-      .attr('y1', spectroMargin.top)
-      .attr('y2', height - spectroMargin.bottom)
-      .attr('stroke', 'black')
+    const timeElapsed = audioContext.currentTime - playbackStartedAt
+    const percentComplete = timeElapsed / audioBuffer.duration 
 
-    playbackLine.transition(transition)
-      .attr('x1', width - spectroMargin.right)
-      .attr('x2', width - spectroMargin.right)
+    const spectroWidth = width - spectroMargin.left - spectroMargin.right
+    const xPosition = spectroMargin.left + spectroWidth * percentComplete
+
+    playbackLine
+      .attr('x1', xPosition)
+      .attr('x2', xPosition)
+
+    playbackLineAnimationId = requestAnimationFrame(animatePlaybackLine)
   }
 }
 
 /**
  * Plays the provided audio buffer.
  * @param {!AudioBuffer} buffer
+ * @param {!AudioContext} audioContext
  * @param {!Function} function to call when playback has ended
  * @return {!AudioBufferSourceNode} the node where playback was started. 
  *     May be used to call stop() or listen for onEnded.
  */
-function playBuffer(buffer, onEnded) {
-  const audioContext = new AudioContext()
+function playBuffer({buffer, audioContext, onEnded}) {
   const source = new AudioBufferSourceNode(audioContext, {buffer})
   source.onended = onEnded
 
