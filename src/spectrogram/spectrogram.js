@@ -1,8 +1,6 @@
 import * as d3Axis from 'd3-axis'
-import * as d3Ease from 'd3-ease'
 import * as d3Selection from 'd3-selection'
 import * as d3Scale from 'd3-scale'
-import * as d3Transition from 'd3-transition'
 import {AudioData} from 'audio-frequency'
 import robinSwift from '../data/robin-swift.wav'
 import playIcon from '../resources/play_icon.svg'
@@ -23,7 +21,7 @@ async function getAndDrawData(audioFile, {width = 1300, height = 400} = {}) {
     spectroWidth = width - spectroMargin.left - spectroMargin.right,
     spectroHeight = height - spectroMargin.top - spectroMargin.bottom
 
-  // Create div container forr spectrogram tool.
+  // Create div container for spectrogram tool.
   const container = d3Selection.select('body')
     .append('div')
     .attr('class', 'sonogramVisualizer')
@@ -187,11 +185,11 @@ function addPlaybackButtons({audioBuffer, svg, height, width, spectroMargin, ico
     .attr('xlink:href', playIcon)
     .attr('opacity', 0.25)
 
-
   function updatePlaybackButtonAndLine(isBeingPlayedBack) {
     d3Selection.select('#playback-icon')
       .attr('xlink:href', isBeingPlayedBack ? stopIcon : playIcon)
-    playbackLine 
+
+    playbackLine
       .attr('opacity', isBeingPlayedBack ? 1.0 : 0.0)
 
     if (!isBeingPlayedBack) {
@@ -236,3 +234,128 @@ function playBuffer({buffer, audioContext, onEnded}) {
 
   return source
 }
+
+class Spectrogram {
+  constructor({audioData, frequencyData, width = 1300, height = 400}) {
+    /** @type {!AudioData} */
+    this.audioData = audioData,
+
+    /**  @type {!Array<!FrequencyData>} */
+    this.frequencyData = frequencyData,
+
+    /** @type {number} width of the Spectrogram visualizer tool. */
+    this.width = width,
+
+    /** @type {number} height of the Spectrogram visualizer tool. */
+    this.height = height
+
+    this.spectroMargin = {top: 40, right: 20, bottom: 40, left: 40}
+    this.spectroWidth = this.width - this.spectroMargin.left - this.spectroMargin.right
+    this.spectroHeight = this.height - this.spectroMargin.top - this.spectroMargin.bottom
+
+    /** @type {!d3Selection.Selection} A div container for spectrogram tool. */
+    this.container = d3Selection.select('body')
+      .append('div')
+      .attr('class', 'sonogramVisualizer')
+      .style('position', 'relative')
+
+    /** @type {!d3Selection.Selection} A canvas for drawing spectrogram data. */
+    this.sonogramCanvas = this.container
+      .append('canvas')
+      .attr('class', 'spectrogram')
+      .attr('width', this.spectroWidth)
+      .attr('height', this.spectroHeight)
+      .style('position', 'absolute')
+      .style('left', `${this.spectroMargin.left}px`)
+      .style('top', `${this.spectroMargin.top}px`)
+
+    /** @type {!CanvasRenderingContext2D} canvas context for sonogram. */ 
+    this.sonogramCtx = this.sonogramCanvas
+      .node()
+      .getContext('2d')
+
+    this.drawSpectrogramData(this.frequencyData.data)
+
+
+    // Create svg that will contain the axis
+    this.svg = this.container
+      .append('svg')
+      .attr('class', 'spectrogramTool')
+      .style('position', 'absolute')
+      .attr('width', this.width)
+      // TODO check why + 20?
+      .attr('height', this.height + 20)
+
+    // TODO also move these functions into the class 
+    drawSpectrogramAxis({
+      frequencyData : this.frequencyData, 
+      svg           : this.svg, 
+      width         : this.width, 
+      height        : this.height, 
+      spectroMargin : this.spectroMargin
+    })
+    addPlaybackButtons({
+      audioBuffer   : audioData.buffer,
+      svg           : this.svg, 
+      width         : this.width, 
+      height        : this.height, 
+      spectroMargin : this.spectroMargin
+    })
+  }
+
+  /**
+   * New Spectrogram given an audioFile path. 
+   * @param {string} audioFile path to audio file
+   * @return {!Spectrogram}
+   */
+  static async fromFile(audioFile, {width = 1300, height = 400} = {}) {
+    const audioData = await AudioData.fromFile(audioFile)
+    const frequencyData = await audioData.getFrequencyData({
+      sampleTimeLength      : 1/140,
+      fftSize               : 2 ** 11,
+      maxFrequency          : 11000,
+      smoothingTimeConstant : 0.8,
+    })
+    return new Spectrogram({audioData, frequencyData, width, height})
+  }
+
+  /** 
+   * Draws the sonogram.
+   * @param {!Array<!Uint8Array>} an array of frequency samples, each 
+   *     sample should be a normalized array of decibel values between 0 and 255.
+   *     The frequencies are spread linearly from 0 to 1/2 of the sample rate.
+   * @private
+   */ 
+  // TODO look into why lower frequencies are not getting drawn.
+  drawSpectrogramData(data) {
+    this.sonogramCtx.fillStyle = 'rgb(240, 240, 240)'
+    this.sonogramCtx.fillRect(0, 0, this.width, this.height)
+
+    // Draw spectrogram
+    const decibleColorScale = d3Scale.scaleLinear()
+      // getAudioFrequencyData returns a normalized array of values
+      // between 0 and 255
+      .domain([0, 255])
+      .range(['rgba(70, 130, 180, 0)', 'rgba(70, 130, 180, 1.0)'])
+    console.log('Frequency bin count:', data[0].length)
+    console.log('Num samples:', data.length)
+    const frequencyBinCount = data[0].length
+    const barWidth = this.width / data.length
+    for (let x = 0; x < data.length; x++) {
+      for (let y = 0; y < frequencyBinCount; y++) {
+        const intensity = data[x][y] 
+        const barHeight = this.height / frequencyBinCount
+        this.sonogramCtx.fillStyle = decibleColorScale(intensity)
+        this.sonogramCtx.fillRect(
+          x * barWidth,
+          this.height - (y * barHeight),
+          barWidth,
+          barHeight,
+        )
+      }
+    }
+  }
+}
+
+// TODO move to index.js
+// Spectrogram.fromFile(robinSwift)
