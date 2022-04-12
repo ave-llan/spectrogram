@@ -330,10 +330,9 @@ class Spectrogram {
    *     The frequencies are spread linearly from 0 to 1/2 of the sample rate.
    * @private
    */ 
-  // TODO look into why lower frequencies are not getting drawn.
   drawSpectrogramData(data) {
     this.sonogramCtx.fillStyle = 'rgb(240, 240, 240)'
-    this.sonogramCtx.fillRect(0, 0, this.width, this.height)
+    this.sonogramCtx.fillRect(0, 0, this.spectroWidth, this.spectroHeight)
 
     // Draw spectrogram
     const decibleColorScale = d3Scale.scaleLinear()
@@ -344,15 +343,15 @@ class Spectrogram {
     console.log('Frequency bin count:', data[0].length)
     console.log('Num samples:', data.length)
     const frequencyBinCount = data[0].length
-    const barWidth = this.width / data.length
+    const barWidth = this.spectroWidth / data.length
     for (let x = 0; x < data.length; x++) {
       for (let y = 0; y < frequencyBinCount; y++) {
         const intensity = data[x][y] 
-        const barHeight = this.height / frequencyBinCount
+        const barHeight = this.spectroHeight / frequencyBinCount
         this.sonogramCtx.fillStyle = decibleColorScale(intensity)
         this.sonogramCtx.fillRect(
           x * barWidth,
-          this.height - (y * barHeight),
+          this.spectroHeight - (y * barHeight),
           barWidth,
           barHeight,
         )
