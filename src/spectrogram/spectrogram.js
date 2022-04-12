@@ -2,7 +2,6 @@ import * as d3Axis from 'd3-axis'
 import * as d3Selection from 'd3-selection'
 import * as d3Scale from 'd3-scale'
 import {AudioData} from 'audio-frequency'
-import robinSwift from '../data/robin-swift.wav'
 import playIcon from '../resources/play_icon.svg'
 import stopIcon from '../resources/stop_icon.svg'
 
@@ -282,5 +281,4 @@ class SpectroPlaybackController {
 
 }
 
-// TODO move to index.js
-Spectrogram.fromFile(robinSwift)
+export {Spectrogram}
