@@ -6,8 +6,6 @@ import robinSwift from '../data/robin-swift.wav'
 import playIcon from '../resources/play_icon.svg'
 import stopIcon from '../resources/stop_icon.svg'
 
-getAndDrawData(robinSwift)
-
 async function getAndDrawData(audioFile, {width = 1300, height = 400} = {}) {
   const audioData = await AudioData.fromFile(audioFile)
   const frequencyData = await audioData.getFrequencyData({
@@ -287,8 +285,7 @@ class Spectrogram {
       .attr('class', 'spectrogramTool')
       .style('position', 'absolute')
       .attr('width', this.width)
-      // TODO check why + 20?
-      .attr('height', this.height + 20)
+      .attr('height', this.height)
 
     // TODO also move these functions into the class 
     drawSpectrogramAxis({
@@ -358,6 +355,8 @@ class Spectrogram {
       }
     }
   }
+
+
 }
 
 // TODO move to index.js
