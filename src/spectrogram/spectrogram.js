@@ -26,6 +26,8 @@ async function getAndDrawData(audioFile, {width = 1300, height = 400} = {}) {
     .append('div')
     .attr('class', 'sonogramVisualizer')
     .style('position', 'relative')
+    .style('width', `${width}px`)
+    .style('height', `${height}px`)
 
   // Create canvas for drawing spectrogram data.
   const sonogramCanvas = container
@@ -256,7 +258,9 @@ class Spectrogram {
     /** @type {!d3Selection.Selection} A div container for spectrogram tool. */
     this.container = d3Selection.select('body')
       .append('div')
-      .attr('class', 'sonogramVisualizer')
+      .attr('class', 'spectrogramVisualizer')
+      .style('width', `${this.width}px`)
+      .style('height', `${this.height}px`)
       .style('position', 'relative')
 
     /** @type {!d3Selection.Selection} A canvas for drawing spectrogram data. */
@@ -358,4 +362,4 @@ class Spectrogram {
 }
 
 // TODO move to index.js
-// Spectrogram.fromFile(robinSwift)
+Spectrogram.fromFile(robinSwift)
