@@ -6,235 +6,6 @@ import robinSwift from '../data/robin-swift.wav'
 import playIcon from '../resources/play_icon.svg'
 import stopIcon from '../resources/stop_icon.svg'
 
-async function getAndDrawData(audioFile, {width = 1300, height = 400} = {}) {
-  const audioData = await AudioData.fromFile(audioFile)
-  const frequencyData = await audioData.getFrequencyData({
-    sampleTimeLength      : 1/140,
-    fftSize               : 2 ** 11,
-    maxFrequency          : 11000,
-    smoothingTimeConstant : 0.8,
-  })
-
-  const spectroMargin = {top: 40, right: 20, bottom: 40, left: 40},
-    spectroWidth = width - spectroMargin.left - spectroMargin.right,
-    spectroHeight = height - spectroMargin.top - spectroMargin.bottom
-
-  // Create div container for spectrogram tool.
-  const container = d3Selection.select('body')
-    .append('div')
-    .attr('class', 'sonogramVisualizer')
-    .style('position', 'relative')
-    .style('width', `${width}px`)
-    .style('height', `${height}px`)
-
-  // Create canvas for drawing spectrogram data.
-  const sonogramCanvas = container
-    .append('canvas')
-    .attr('class', 'spectrogram')
-    .attr('width', spectroWidth)
-    .attr('height', spectroHeight)
-  sonogramCanvas
-    .style('position', 'absolute')
-    .style('left', `${spectroMargin.left}px`)
-    .style('top', `${spectroMargin.top}px`)
-  const sonogramCtx = sonogramCanvas
-    .node()
-    .getContext('2d')
-
-  drawSpectrogramData(frequencyData.data, {sonogramCtx, width: spectroWidth, height: spectroHeight})
-
-  // Create svg that will contain the axis
-  const svg = container
-    .append('svg')
-    .attr('class', 'spectrogramTool')
-    .style('position', 'absolute')
-    .attr('width', width)
-    .attr('height', height + 20)
-  drawSpectrogramAxis({frequencyData, svg, width, height, spectroMargin})
-  addPlaybackButtons({audioBuffer: audioData.buffer, svg, height, width, spectroMargin})
-  console.log(frequencyData)
-}
-
-function drawSpectrogramData(data, {sonogramCtx, width = 1400, height = 400} = {}) {
-  sonogramCtx.fillStyle = 'rgb(240, 240, 240)'
-  sonogramCtx.fillRect(0, 0, width, height)
-
-  // Draw spectrogram
-  const decibleColorScale = d3Scale.scaleLinear()
-    // getAudioFrequencyData returns a normalized array of values
-    // between 0 and 255
-    .domain([0, 255])
-    .range(['rgba(70, 130, 180, 0)', 'rgba(70, 130, 180, 1.0)'])
-  console.log('Frequency bin count:', data[0].length)
-  console.log('Num samples:', data.length)
-  const frequencyBinCount = data[0].length
-  const barWidth = width / data.length
-  for (let x = 0; x < data.length; x++) {
-    for (let y = 0; y < frequencyBinCount; y++) {
-      const intensity = data[x][y] 
-      const barHeight = height / frequencyBinCount
-      sonogramCtx.fillStyle = decibleColorScale(intensity)
-      sonogramCtx.fillRect(
-        x * barWidth,
-        height - (y * barHeight),
-        barWidth,
-        barHeight,
-      )
-    }
-  }
-}
-
-/**
- * @param {!FrequencyData} frequencyData
- */
-function drawSpectrogramAxis({frequencyData, svg, width = 1400, height = 400, spectroMargin} = {}) {
-  console.log('frequencyData.duration:', frequencyData.duration)
-  const spectrogramWidth = width - spectroMargin.left - spectroMargin.right 
-  const spectrogramWHeight = height - spectroMargin.top - spectroMargin.bottom
-
-  // Add x axis (time scale)
-  const timeScale = d3Scale.scaleLinear()
-    .domain([0, frequencyData.duration])
-    .range([0, spectrogramWidth])
-  const timeAxis = d3Axis.axisBottom(timeScale)
-    .ticks(Math.floor(frequencyData.duration))
-  svg.append('g')
-    .attr('class', 'xAxis')
-    .attr('transform', `translate(${spectroMargin.left},${height - spectroMargin.bottom})`)
-    .call(timeAxis)
-    // Add label for axis
-    .append('g')
-    .append('text')
-    // Position axis label with enough room below axis ticks
-    .attr('transform', `translate(${spectrogramWidth},${30})`)
-    .attr('fill', 'black')
-    .attr('text-anchor', 'end')
-    .text('seconds  →')
-
-  // Add y axis (frequency scale)
-  const frequencyScale = d3Scale.scaleLinear()
-    .domain([frequencyData.minFrequency, frequencyData.maxFrequency])
-    .range([spectrogramWHeight, 0])
-  const frequencyAxis = d3Axis.axisLeft(frequencyScale)
-    .ticks(10)
-    // convert to kHz
-    .tickFormat(hz => `${hz / 1000}`)
-
-  svg.append('g')
-    .attr('class', 'yAxis')
-    .attr('transform', `translate(${spectroMargin.left},${spectroMargin.top})`)
-    .call(frequencyAxis)
-    // Add label for axis
-    .append('g')
-    .append('text')
-    // Position axis label so arrow roughly aligns with y axis
-    .attr('transform', `translate(${-3},${-5})`)
-    .attr('fill', 'black')
-    .attr('text-anchor', 'start')
-    .text('↑ kHz')
-
-  // Add playback buttons
-
-}
-
-function addPlaybackButtons({audioBuffer, svg, height, width, spectroMargin, iconSize = 30}) {
-  const spectroPadding = 5
-  let playbackActive = false
-  let playbackNode
-  let playbackLineAnimationId
-  let playbackStartedAt
-  const audioContext = new AudioContext()
-
-  const playbackLine = svg
-    .append('g')
-    .attr('class', 'playbackPositionLine')
-    .append('line')
-    .attr('x1', spectroMargin.left)
-    .attr('x2', spectroMargin.left)
-    .attr('y1', spectroMargin.top)
-    .attr('y2', height - spectroMargin.bottom)
-    .attr('stroke', 'black')
-    .attr('opacity', 0)
-
-  const playbackIcon = svg.append('g')
-    .attr('class', 'play-icon')
-    .attr('transform', 
-      `translate(${width - (iconSize + spectroMargin.right)},${spectroMargin.top - spectroPadding - iconSize})`)
-    .on('click', () => {
-      updatePlaybackButtonAndLine(!playbackActive)
-      playbackActive = !playbackActive
-      if (playbackActive) {
-        playbackNode = playBuffer({
-          audioContext,
-          buffer  : audioBuffer,
-          onEnded : () => {
-            updatePlaybackButtonAndLine(false)
-            playbackActive = false
-          }})
-        playbackStartedAt = audioContext.currentTime
-        animatePlaybackLine()
-      } else if (playbackNode) {
-        playbackNode.stop()
-      }
-    })
-
-  playbackIcon.append('image')
-    .attr('id', 'playback-icon')
-    .attr('width', iconSize)
-    .attr('height', iconSize)
-    .attr('xlink:href', playIcon)
-    .attr('opacity', 0.25)
-
-  function updatePlaybackButtonAndLine(isBeingPlayedBack) {
-    d3Selection.select('#playback-icon')
-      .attr('xlink:href', isBeingPlayedBack ? stopIcon : playIcon)
-
-    playbackLine
-      .attr('opacity', isBeingPlayedBack ? 1.0 : 0.0)
-
-    if (!isBeingPlayedBack) {
-      cancelAnimationFrame(playbackLineAnimationId)
-    }
-  }
-
-  /** 
-   * Creates and animates a line to show the current playback position and animates it.
-   * @return {number} the requestAnimationFrame ID for cancelling 
-   */
-  function animatePlaybackLine() {
-    // Draw a vertical line to show current position of playback
-    const timeElapsed = audioContext.currentTime - playbackStartedAt
-    const percentComplete = timeElapsed / audioBuffer.duration 
-
-    const spectroWidth = width - spectroMargin.left - spectroMargin.right
-    const xPosition = spectroMargin.left + spectroWidth * percentComplete
-
-    playbackLine
-      .attr('x1', xPosition)
-      .attr('x2', xPosition)
-
-    playbackLineAnimationId = requestAnimationFrame(animatePlaybackLine)
-  }
-}
-
-/**
- * Plays the provided audio buffer.
- * @param {!AudioBuffer} buffer
- * @param {!AudioContext} audioContext
- * @param {!Function} function to call when playback has ended
- * @return {!AudioBufferSourceNode} the node where playback was started. 
- *     May be used to call stop() or listen for onEnded.
- */
-function playBuffer({buffer, audioContext, onEnded}) {
-  const source = new AudioBufferSourceNode(audioContext, {buffer})
-  source.onended = onEnded
-
-  source.connect(audioContext.destination)
-  source.start()
-
-  return source
-}
-
 class Spectrogram {
   constructor({audioData, frequencyData, width = 1300, height = 400}) {
     /** @type {!AudioData} */
@@ -276,9 +47,6 @@ class Spectrogram {
       .node()
       .getContext('2d')
 
-    this.drawSpectrogramData(this.frequencyData.data)
-
-
     // Create svg that will contain the axis
     this.svg = this.container
       .append('svg')
@@ -287,15 +55,9 @@ class Spectrogram {
       .attr('width', this.width)
       .attr('height', this.height)
 
-    // TODO also move these functions into the class 
-    drawSpectrogramAxis({
-      frequencyData : this.frequencyData, 
-      svg           : this.svg, 
-      width         : this.width, 
-      height        : this.height, 
-      spectroMargin : this.spectroMargin
-    })
-    addPlaybackButtons({
+    this.drawSpectrogramData(this.frequencyData.data)
+    this.drawSpectrogramAxis()
+    new SpectroPlaybackController({
       audioBuffer   : audioData.buffer,
       svg           : this.svg, 
       width         : this.width, 
@@ -356,6 +118,167 @@ class Spectrogram {
     }
   }
 
+  /**
+   * @private
+   */
+  drawSpectrogramAxis() {
+    console.log('frequencyData.duration:', this.frequencyData.duration)
+
+    // Add x axis (time scale)
+    const timeScale = d3Scale.scaleLinear()
+      .domain([0, this.frequencyData.duration])
+      .range([0, this.spectroWidth])
+    const timeAxis = d3Axis.axisBottom(timeScale)
+      .ticks(Math.floor(this.frequencyData.duration))
+    this.svg.append('g')
+      .attr('class', 'xAxis')
+      .attr('transform', `translate(${this.spectroMargin.left},${this.height - this.spectroMargin.bottom})`)
+      .call(timeAxis)
+      // Add label for axis
+      .append('g')
+      .append('text')
+      // Position axis label with enough room below axis ticks
+      .attr('transform', `translate(${this.spectroWidth},${30})`)
+      .attr('fill', 'black')
+      .attr('text-anchor', 'end')
+      .text('seconds  →')
+
+    // Add y axis (frequency scale)
+    const frequencyScale = d3Scale.scaleLinear()
+      .domain([this.frequencyData.minFrequency, this.frequencyData.maxFrequency])
+      .range([this.spectroHeight, 0])
+    const frequencyAxis = d3Axis.axisLeft(frequencyScale)
+      .ticks(10)
+      // convert to kHz
+      .tickFormat(hz => `${hz / 1000}`)
+
+    this.svg.append('g')
+      .attr('class', 'yAxis')
+      .attr('transform', `translate(${this.spectroMargin.left},${this.spectroMargin.top})`)
+      .call(frequencyAxis)
+      // Add label for axis
+      .append('g')
+      .append('text')
+      // Position axis label so arrow roughly aligns with y axis
+      .attr('transform', `translate(${-3},${-5})`)
+      .attr('fill', 'black')
+      .attr('text-anchor', 'start')
+      .text('↑ kHz')
+  }
+}
+
+/**
+ *  Adds playback functionality to spectrogram.
+ */
+class SpectroPlaybackController {
+  constructor({audioBuffer, svg, height, width, spectroMargin, iconSize = 30}) {
+
+    this.audioBuffer = audioBuffer
+    this.audioContext = new AudioContext()
+
+    /** @type {number} padding around spectrogram */
+    this.spectroPadding = 5
+    this.width = width,
+    this.height = height,
+    this.spectroMargin = spectroMargin
+
+    this.playbackActive = false
+    this.playbacknode,
+    this.playbackLineAnimationId,
+    this.playbackStartedAt
+
+
+    this.playbackLine = svg
+      .append('g')
+      .attr('class', 'playbackPositionLine')
+      .append('line')
+      .attr('x1', spectroMargin.left)
+      .attr('x2', spectroMargin.left)
+      .attr('y1', spectroMargin.top)
+      .attr('y2', this.height - spectroMargin.bottom)
+      .attr('stroke', 'black')
+      .attr('opacity', 0)
+
+    this.playbackIcon = svg.append('g')
+      .attr('class', 'play-icon')
+      .attr('transform', 
+        `translate(${this.width - (iconSize + spectroMargin.right)},${spectroMargin.top - this.spectroPadding - iconSize})`)
+      .on('click', () => {
+        this.updatePlaybackButtonAndLineAnimation(!this.playbackActive)
+        this.playbackActive = !this.playbackActive
+        if (this.playbackActive) {
+          this.playbackNode = this.playBuffer({
+            buffer: this.audioBuffer,
+          })
+          this.animatePlaybackLine()
+        } else if (this.playbackNode) {
+          this.playbackNode.stop()
+        }
+      })
+
+    this.playbackIcon.append('image')
+      .attr('id', 'playback-icon')
+      .attr('width', iconSize)
+      .attr('height', iconSize)
+      .attr('xlink:href', playIcon)
+      .attr('opacity', 0.25)
+  }
+
+  /**
+   *  Sets the stop/play icon to the appropriate state, hides/shows the animation line as needed,
+   *  and cancels animation if needed.
+   *  @param {boolean} isBelingPlayedBack
+   */
+  updatePlaybackButtonAndLineAnimation(isBeingPlayedBack) {
+    d3Selection.select('#playback-icon')
+      .attr('xlink:href', isBeingPlayedBack ? stopIcon : playIcon)
+
+    this.playbackLine
+      .attr('opacity', isBeingPlayedBack ? 1.0 : 0.0)
+
+    if (!isBeingPlayedBack) {
+      cancelAnimationFrame(this.playbackLineAnimationId)
+    }
+  }
+
+  /** 
+   * Animates a line to show the current playback position.
+   * @return {number} the requestAnimationFrame ID for cancelling 
+   */
+  animatePlaybackLine() {
+    // Draw a vertical line to show current position of playback
+    const timeElapsed = this.audioContext.currentTime - this.playbackStartedAt
+    const percentComplete = timeElapsed / this.audioBuffer.duration 
+
+    const spectroWidth = this.width - this.spectroMargin.left - this.spectroMargin.right
+    const xPosition = this.spectroMargin.left + spectroWidth * percentComplete
+
+    this.playbackLine
+      .attr('x1', xPosition)
+      .attr('x2', xPosition)
+
+    this.playbackLineAnimationId = requestAnimationFrame(() => this.animatePlaybackLine())
+  }
+
+  /**
+   * Plays the provided audio buffer.
+   * @param {!AudioBuffer} buffer
+   * @return {!AudioBufferSourceNode} the node where playback was started. 
+   *     May be used to call stop() or listen for onEnded.
+   */
+  playBuffer({buffer}) {
+    const source = new AudioBufferSourceNode(this.audioContext, {buffer})
+    source.onended = () => { 
+      this.updatePlaybackButtonAndLineAnimation(false)
+      this.playbackActive = false}
+
+    source.connect(this.audioContext.destination)
+    source.start()
+
+    this.playbackStartedAt = this.audioContext.currentTime
+
+    return source
+  }
 
 }
 
