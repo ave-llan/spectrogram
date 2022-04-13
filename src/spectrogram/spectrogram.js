@@ -118,9 +118,10 @@ class Spectrogram {
   }
 
   /**
+   * @param {boolean} useMusicNotation
    * @private
    */
-  drawSpectrogramAxis() {
+  drawSpectrogramAxis(useMusicNotation = true) {
     console.log('frequencyData.duration:', this.frequencyData.duration)
 
     // Add x axis (time scale)
@@ -142,15 +143,20 @@ class Spectrogram {
       .attr('text-anchor', 'end')
       .text('seconds  →')
 
-    // Add y axis (frequency scale)
-    const frequencyScale = d3Scale.scaleLinear()
-      .domain([this.frequencyData.minFrequency, this.frequencyData.maxFrequency])
-      .range([this.spectroHeight, 0])
-    const frequencyAxis = d3Axis.axisLeft(frequencyScale)
-      .ticks(10)
-      // convert to kHz
-      .tickFormat(hz => `${hz / 1000}`)
+    const frequencyAxis = useMusicNotation ? 
 
+      musicNotationAxis({
+        minFrequency  : this.frequencyData.minFrequency, 
+        maxFrequency  : this.frequencyData.maxFrequency,
+        spectroHeight : this.spectroHeight,
+      }) :
+      frequencyScaleAxis({
+        minFrequency  : this.frequencyData.minFrequency, 
+        maxFrequency  : this.frequencyData.maxFrequency,
+        spectroHeight : this.spectroHeight,
+      })
+
+    // Add y axis (frequency scale)
     this.svg.append('g')
       .attr('class', 'yAxis')
       .attr('transform', `translate(${this.spectroMargin.left},${this.spectroMargin.top})`)
@@ -279,6 +285,33 @@ class SpectroPlaybackController {
     return source
   }
 
+}
+
+function frequencyScaleAxis({minFrequency, maxFrequency, spectroHeight}) {
+  const frequencyScale = d3Scale.scaleLinear()
+    .domain([minFrequency, maxFrequency])
+    .range([spectroHeight, 0])
+  const frequencyAxis = d3Axis.axisLeft(frequencyScale)
+    .ticks(10)
+    // convert to kHz
+    .tickFormat(hz => `${hz / 1000}`)
+
+  return frequencyAxis
+}
+
+/** 
+ * Shows octaves from A4 -> A9 now.
+ * TODO: make less manual, show intermediate pitches as well. 
+ */ 
+function musicNotationAxis({minFrequency, maxFrequency, spectroHeight}) {
+  const frequencyScale = d3Scale.scaleLinear()
+    .domain([minFrequency, maxFrequency])
+    .range([spectroHeight, 0])
+  const frequencyAxis = d3Axis.axisLeft(frequencyScale)
+    .tickValues([0,1,2,3,4].map(exponent => 440 * Math.pow(2, exponent)))
+    // convert to A4, A5, etc
+    .tickFormat(hz => `A${Math.log2(hz / 440) + 4}`)
+  return frequencyAxis
 }
 
 export {Spectrogram}
