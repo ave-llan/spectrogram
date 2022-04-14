@@ -28,6 +28,12 @@ module.exports = {
       2,
       'unix'
     ],
+    'max-len': [
+      2,
+      {
+        'code': 80
+      }
+    ],
     'quotes': [
       2,
       'single'
