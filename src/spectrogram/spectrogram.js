@@ -95,24 +95,33 @@ class Spectrogram {
     this.sonogramCtx.fillStyle = 'rgb(240, 240, 240)'
     this.sonogramCtx.fillRect(0, 0, this.spectroWidth, this.spectroHeight)
 
-    // Draw spectrogram
+    // Scale for positioning frequency values.
+    const frequencyScale = d3Scale.scaleLinear()
+      .domain([
+        this.frequencyData.minFrequency, 
+        this.frequencyData.maxFrequency
+      ])
+      .range([this.spectroHeight, 0])
+
+    // Scale for decible colors.
     const decibleColorScale = d3Scale.scaleLinear()
       // getAudioFrequencyData returns a normalized array of values
       // between 0 and 255
       .domain([0, 255])
       .range(['rgba(70, 130, 180, 0)', 'rgba(70, 130, 180, 1.0)'])
-    console.log('Frequency bin count:', data[0].length)
-    console.log('Num samples:', data.length)
+
     const frequencyBinCount = data[0].length
     const barWidth = this.spectroWidth / data.length
     for (let x = 0; x < data.length; x++) {
       for (let y = 0; y < frequencyBinCount; y++) {
-        const intensity = data[x][y] 
-        const barHeight = this.spectroHeight / frequencyBinCount
+        const intensity = data[x][y]
+        const y1 = frequencyScale(this.frequencyData.frequencyAtBin(y))
+        const y2 = frequencyScale(this.frequencyData.frequencyAtBin(y + 1))
+        const barHeight = y1 - y2
         this.sonogramCtx.fillStyle = decibleColorScale(intensity)
         this.sonogramCtx.fillRect(
           x * barWidth,
-          this.spectroHeight - (y * barHeight),
+          y1,
           barWidth,
           barHeight,
         )
