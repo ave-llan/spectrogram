@@ -20,8 +20,10 @@ class Spectrogram {
     this.height = height
 
     this.spectroMargin = {top: 40, right: 20, bottom: 40, left: 40}
-    this.spectroWidth = this.width - this.spectroMargin.left - this.spectroMargin.right
-    this.spectroHeight = this.height - this.spectroMargin.top - this.spectroMargin.bottom
+    this.spectroWidth = this.width 
+      - this.spectroMargin.left - this.spectroMargin.right
+    this.spectroHeight = this.height 
+      - this.spectroMargin.top - this.spectroMargin.bottom
 
     /** @type {!d3Selection.Selection} A div container for spectrogram tool. */
     this.container = d3Selection.select('body')
@@ -84,8 +86,9 @@ class Spectrogram {
   /** 
    * Draws the sonogram.
    * @param {!Array<!Uint8Array>} an array of frequency samples, each 
-   *     sample should be a normalized array of decibel values between 0 and 255.
-   *     The frequencies are spread linearly from 0 to 1/2 of the sample rate.
+   *     sample should be a normalized array of decibel values between 0 and 
+   *     255. The frequencies are spread linearly from 0 to 1/2 of the sample
+   *     rate.
    * @private
    */ 
   drawSpectrogramData(data) {
@@ -132,7 +135,9 @@ class Spectrogram {
       .ticks(Math.floor(this.frequencyData.duration))
     this.svg.append('g')
       .attr('class', 'xAxis')
-      .attr('transform', `translate(${this.spectroMargin.left},${this.height - this.spectroMargin.bottom})`)
+      .attr('transform', `translate(
+        ${this.spectroMargin.left},${this.height - this.spectroMargin.bottom})`
+      )
       .call(timeAxis)
       // Add label for axis
       .append('g')
@@ -159,7 +164,9 @@ class Spectrogram {
     // Add y axis (frequency scale)
     this.svg.append('g')
       .attr('class', 'yAxis')
-      .attr('transform', `translate(${this.spectroMargin.left},${this.spectroMargin.top})`)
+      .attr('transform', `translate(
+        ${this.spectroMargin.left},${this.spectroMargin.top})`
+      )
       .call(frequencyAxis)
       // Add label for axis
       .append('g')
@@ -207,7 +214,10 @@ class SpectroPlaybackController {
     this.playbackIcon = svg.append('g')
       .attr('class', 'play-icon')
       .attr('transform', 
-        `translate(${this.width - (iconSize + spectroMargin.right)},${spectroMargin.top - this.spectroPadding - iconSize})`)
+        `translate(
+          ${this.width - (iconSize + spectroMargin.right)},
+          ${spectroMargin.top - this.spectroPadding - iconSize})`
+      )
       .on('click', () => {
         this.updatePlaybackButtonAndLineAnimation(!this.playbackActive)
         this.playbackActive = !this.playbackActive
@@ -230,8 +240,8 @@ class SpectroPlaybackController {
   }
 
   /**
-   *  Sets the stop/play icon to the appropriate state, hides/shows the animation line as needed,
-   *  and cancels animation if needed.
+   *  Sets the stop/play icon to the appropriate state, hides/shows the 
+   *  animation line as needed, and cancels animation if needed.
    *  @param {boolean} isBelingPlayedBack
    */
   updatePlaybackButtonAndLineAnimation(isBeingPlayedBack) {
@@ -255,14 +265,17 @@ class SpectroPlaybackController {
     const timeElapsed = this.audioContext.currentTime - this.playbackStartedAt
     const percentComplete = timeElapsed / this.audioBuffer.duration 
 
-    const spectroWidth = this.width - this.spectroMargin.left - this.spectroMargin.right
+    const spectroWidth = this.width 
+      - this.spectroMargin.left 
+      - this.spectroMargin.right
     const xPosition = this.spectroMargin.left + spectroWidth * percentComplete
 
     this.playbackLine
       .attr('x1', xPosition)
       .attr('x2', xPosition)
 
-    this.playbackLineAnimationId = requestAnimationFrame(() => this.animatePlaybackLine())
+    this.playbackLineAnimationId = 
+      requestAnimationFrame(() => this.animatePlaybackLine())
   }
 
   /**
