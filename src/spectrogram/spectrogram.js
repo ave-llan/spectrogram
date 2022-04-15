@@ -118,8 +118,8 @@ class Spectrogram {
         const intensity = data[x][y]
         const y1 = frequencyScale(this.frequencyData.frequencyAtBin(y))
         const y2 = frequencyScale(this.frequencyData.frequencyAtBin(y + 1))
-        if (x == 0)
-          console.log(this.frequencyData.frequencyAtBin(y), "    ",y1 - y2)
+        // if (x == 0)
+        //   console.log(this.frequencyData.frequencyAtBin(y), "    ",y1 - y2)
         const barHeight = y1 - y2
         this.sonogramCtx.fillStyle = decibleColorScale(intensity)
         this.sonogramCtx.fillRect(
@@ -325,18 +325,26 @@ function frequencyScaleAxis({minFrequency, maxFrequency, spectroHeight}) {
 }
 
 /** 
- * Shows octaves from A4 -> A9 now.
- * TODO: make less manual, show intermediate pitches as well. 
+ * Shows octaves from A4 -> A9.
  */ 
-function musicNotationAxis({minFrequency, maxFrequency, spectroHeight}) {
+function musicNotationAxis({minFrequency, maxFrequency, spectroHeight, 
+  scaleLogarithmic = false}) {
   const baseFrequency = 440
   const baseNoteClass = 'A'
   const baseFrequencyOctaveNum = 4
 
-  const frequencyScale = d3Scale.scaleLinear()
-    .domain([minFrequency, maxFrequency])
-    .range([spectroHeight, 0])
-  const frequencyAxis = d3Axis.axisLeft(frequencyScale)
+  const scale = scaleLogarithmic ? 
+    d3Scale.scaleLog()
+      .base(2)
+      // domain must be > 0 for log scale
+      .domain([minFrequency || 1, maxFrequency])
+      .range([spectroHeight, 0])
+    : d3Scale.scaleLinear()
+      .domain([minFrequency, maxFrequency])
+      .range([spectroHeight, 0])
+
+
+  const frequencyAxis = d3Axis.axisLeft(scale)
     .tickValues([0,1,2,3,4]
       .map(exponent => baseFrequency * Math.pow(2, exponent))
     )
