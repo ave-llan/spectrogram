@@ -13,6 +13,9 @@ class Spectrogram {
     /**  @type {!Array<!FrequencyData>} */
     this.frequencyData = frequencyData,
 
+    this.minFrequencyToRender = 880,
+    this.maxFrequencyToRender = 14080
+
     /** @type {number} width of the Spectrogram visualizer tool. */
     this.width = width,
 
@@ -91,15 +94,16 @@ class Spectrogram {
    *     rate.
    * @private
    */ 
-  drawSpectrogramData(data, useMusicNotation = false) {
+  drawSpectrogramData(data, 
+    {scaleLogarithmic = true} = {}) {
     this.sonogramCtx.fillStyle = 'rgb(240, 240, 240)'
     this.sonogramCtx.fillRect(0, 0, this.spectroWidth, this.spectroHeight)
 
     // Scale for positioning frequency values.
     const frequencyScale = 
-    (useMusicNotation ?  d3Scale.scaleSqrt() : d3Scale.scaleLinear())
+    (scaleLogarithmic ?  d3Scale.scaleLog().base(2) : d3Scale.scaleLinear())
       .domain([
-        this.frequencyData.minFrequency, 
+        this.minFrequencyToRender || 1, 
         this.frequencyData.maxFrequency
       ])
       .range([this.spectroHeight, 0])
@@ -163,7 +167,7 @@ class Spectrogram {
     const frequencyAxis = useMusicNotation ? 
 
       musicNotationAxis({
-        minFrequency  : this.frequencyData.minFrequency, 
+        minFrequency  : this.minFrequencyToRender, 
         maxFrequency  : this.frequencyData.maxFrequency,
         spectroHeight : this.spectroHeight,
       }) :
@@ -328,7 +332,7 @@ function frequencyScaleAxis({minFrequency, maxFrequency, spectroHeight}) {
  * Shows octaves from A4 -> A9.
  */ 
 function musicNotationAxis({minFrequency, maxFrequency, spectroHeight, 
-  scaleLogarithmic = false}) {
+  scaleLogarithmic = true}) {
   const baseFrequency = 440
   const baseNoteClass = 'A'
   const baseFrequencyOctaveNum = 4
