@@ -191,7 +191,7 @@ class Spectrogram {
       .attr('transform', `translate(${-3},${-5})`)
       .attr('fill', 'black')
       .attr('text-anchor', 'start')
-      .text('↑ kHz')
+      .text(`↑ ${useMusicNotation ? '♫' : 'kHz'}`)
   }
 }
 
