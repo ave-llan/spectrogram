@@ -141,7 +141,9 @@ class Spectrogram {
    * @private
    */
   drawSpectrogramAxis(useMusicNotation = true) {
-    console.log('frequencyData.duration:', this.frequencyData.duration)
+    // Clear current scales in case this is a re-draw
+    this.svg.select('.xAxis').remove()
+    this.svg.select('.yAxis').remove()
 
     // Add x axis (time scale)
     const timeScale = d3Scale.scaleLinear()
@@ -164,8 +166,8 @@ class Spectrogram {
       .attr('text-anchor', 'end')
       .text('seconds  →')
 
+    // Add y axis (frequency scale)
     const frequencyAxis = useMusicNotation ? 
-
       musicNotationAxis({
         minFrequency  : this.minFrequencyToRender, 
         maxFrequency  : this.frequencyData.maxFrequency,
@@ -176,28 +178,23 @@ class Spectrogram {
         maxFrequency  : this.frequencyData.maxFrequency,
         spectroHeight : this.spectroHeight,
       })
-
-    // Add y axis (frequency scale)
-    const frequencyScale = this.svg.append('g')
+    this.svg.append('g')
       .attr('class', 'yAxis')
       .attr('transform', `translate(
         ${this.spectroMargin.left},${this.spectroMargin.top})`
       )
       .call(frequencyAxis)
       // Add label for axis
-
-    const frequencyLabelToggle = 
-      frequencyScale
-        .append('g')
-        .on('click', () => {
-          console.log('frequencyLabelToggle clicked')
-        })
-        .append('text')
-        // Position axis label so arrow roughly aligns with y axis
-        .attr('transform', `translate(${-3},${-5})`)
-        .attr('fill', 'black')
-        .attr('text-anchor', 'start')
-        .text(`↑ ${useMusicNotation ? '♫' : 'kHz'}`)
+      .append('g')
+      .on('click', () => 
+        this.drawSpectrogramAxis(!useMusicNotation)
+      )
+      .append('text')
+      // Position axis label so arrow roughly aligns with y axis
+      .attr('transform', `translate(${-3},${-5})`)
+      .attr('fill', 'black')
+      .attr('text-anchor', 'start')
+      .text(`↑ ${useMusicNotation ? '♫' : 'kHz'}`)
   }
 }
 
