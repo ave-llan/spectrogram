@@ -28,6 +28,8 @@ class Spectrogram {
     this.spectroHeight = this.height 
       - this.spectroMargin.top - this.spectroMargin.bottom
 
+    this.displayState = new DisplayState()
+
     /** @type {!d3Selection.Selection} A div container for spectrogram tool. */
     this.container = d3Selection.select('body')
       .append('div')
@@ -59,8 +61,7 @@ class Spectrogram {
       .attr('width', this.width)
       .attr('height', this.height)
 
-    this.drawSpectrogramData(this.frequencyData.data)
-    this.drawSpectrogramAxis()
+    this.drawSpectrogram(this.displayState.getState())
     new SpectroPlaybackController({
       audioBuffer   : audioData.buffer,
       svg           : this.svg, 
@@ -86,6 +87,17 @@ class Spectrogram {
     return new Spectrogram({audioData, frequencyData, width, height})
   }
 
+  /**
+   * Draws spectrogram data and axis.
+   */
+  drawSpectrogram({scaleLogarithmic, useMusicNotation}) {
+    console.log('drawSpectrogram')
+    console.log('scaleLogarithmic', scaleLogarithmic)
+    console.log('useMusicNotation', useMusicNotation)
+    this.drawSpectrogramData(this.frequencyData.data, {scaleLogarithmic})
+    this.drawSpectrogramAxis({useMusicNotation})
+  }
+
   /** 
    * Draws the sonogram.
    * @param {!Array<!Uint8Array>} an array of frequency samples, each 
@@ -94,8 +106,7 @@ class Spectrogram {
    *     rate.
    * @private
    */ 
-  drawSpectrogramData(data, 
-    {scaleLogarithmic = true} = {}) {
+  drawSpectrogramData(data,  {scaleLogarithmic = true} = {}) {
     this.sonogramCtx.fillStyle = 'rgb(240, 240, 240)'
     this.sonogramCtx.fillRect(0, 0, this.spectroWidth, this.spectroHeight)
 
@@ -140,7 +151,7 @@ class Spectrogram {
    * @param {boolean} useMusicNotation
    * @private
    */
-  drawSpectrogramAxis(useMusicNotation = true) {
+  drawSpectrogramAxis({useMusicNotation = true} = {}) {
     // Clear current scales in case this is a re-draw
     this.svg.select('.xAxis').remove()
     this.svg.select('.yAxis').remove()
@@ -187,7 +198,7 @@ class Spectrogram {
       // Add label for axis
       .append('g')
       .on('click', () => 
-        this.drawSpectrogramAxis(!useMusicNotation)
+        this.drawSpectrogram(this.displayState.nextDisplayState())
       )
       .append('text')
       // Position axis label so arrow roughly aligns with y axis
@@ -361,6 +372,42 @@ function musicNotationAxis({minFrequency, maxFrequency, spectroHeight,
         (Math.log2(hz / baseFrequency) + baseFrequencyOctaveNum)
     )
   return frequencyAxis
+}
+
+class DisplayState {
+  constructor() {
+    this.displayStates = [
+      {scaleLogarithmic: false, useMusicNotation: false},
+      {scaleLogarithmic: false, useMusicNotation: true},
+      {scaleLogarithmic: true, useMusicNotation: true},
+      {scaleLogarithmic: true, useMusicNotation: false},
+    ]
+
+    this.position = 0
+  }
+
+  /** 
+   * Moves to the next display state and returns it. 
+   * @return {{
+   *     scaleLogarithmic: boolean,
+   *     useMusicNotation: boolean 
+   *     }}
+   */
+  nextDisplayState() {
+    this.position = (this.position + 1) % this.displayStates.length
+    return this.getState()
+  }
+
+  /** 
+   * Gets current display state.
+   * @return {{
+   *     scaleLogarithmic: boolean,
+   *     useMusicNotation: boolean 
+   *     }}
+   */
+  getState() {
+    return this.displayStates[this.position]
+  }
 }
 
 export {Spectrogram}
