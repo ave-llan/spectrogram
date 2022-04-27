@@ -95,7 +95,7 @@ class Spectrogram {
     console.log('scaleLogarithmic', scaleLogarithmic)
     console.log('useMusicNotation', useMusicNotation)
     this.drawSpectrogramData(this.frequencyData.data, {scaleLogarithmic})
-    this.drawSpectrogramAxis({useMusicNotation})
+    this.drawSpectrogramAxis({useMusicNotation, scaleLogarithmic})
   }
 
   /** 
@@ -151,7 +151,7 @@ class Spectrogram {
    * @param {boolean} useMusicNotation
    * @private
    */
-  drawSpectrogramAxis({useMusicNotation = true} = {}) {
+  drawSpectrogramAxis({useMusicNotation = true, scaleLogarithmic = true} = {}) {
     // Clear current scales in case this is a re-draw
     this.svg.select('.xAxis').remove()
     this.svg.select('.yAxis').remove()
@@ -183,11 +183,13 @@ class Spectrogram {
         minFrequency  : this.minFrequencyToRender, 
         maxFrequency  : this.frequencyData.maxFrequency,
         spectroHeight : this.spectroHeight,
+        scaleLogarithmic
       }) :
       frequencyScaleAxis({
         minFrequency  : this.frequencyData.minFrequency, 
         maxFrequency  : this.frequencyData.maxFrequency,
         spectroHeight : this.spectroHeight,
+        scaleLogarithmic
       })
     this.svg.append('g')
       .attr('class', 'yAxis')
@@ -345,12 +347,15 @@ function frequencyScaleAxis({minFrequency, maxFrequency, spectroHeight}) {
 /** 
  * Shows octaves from A4 -> A9.
  */ 
-function musicNotationAxis({minFrequency, maxFrequency, spectroHeight, 
-  scaleLogarithmic = true}) {
-  const baseFrequency = 440
+function musicNotationAxis({
+  minFrequency, 
+  maxFrequency, 
+  spectroHeight, 
+  scaleLogarithmic
+}) {
+  const baseFrequency = 880
   const baseNoteClass = 'A'
-  const baseFrequencyOctaveNum = 4
-
+  const baseFrequencyOctaveNum = 5
   const scale = scaleLogarithmic ? 
     d3Scale.scaleLog()
       .base(2)
