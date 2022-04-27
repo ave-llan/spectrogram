@@ -178,20 +178,26 @@ class Spectrogram {
       })
 
     // Add y axis (frequency scale)
-    this.svg.append('g')
+    const frequencyScale = this.svg.append('g')
       .attr('class', 'yAxis')
       .attr('transform', `translate(
         ${this.spectroMargin.left},${this.spectroMargin.top})`
       )
       .call(frequencyAxis)
       // Add label for axis
-      .append('g')
-      .append('text')
-      // Position axis label so arrow roughly aligns with y axis
-      .attr('transform', `translate(${-3},${-5})`)
-      .attr('fill', 'black')
-      .attr('text-anchor', 'start')
-      .text(`↑ ${useMusicNotation ? '♫' : 'kHz'}`)
+
+    const frequencyLabelToggle = 
+      frequencyScale
+        .append('g')
+        .on('click', () => {
+          console.log('frequencyLabelToggle clicked')
+        })
+        .append('text')
+        // Position axis label so arrow roughly aligns with y axis
+        .attr('transform', `translate(${-3},${-5})`)
+        .attr('fill', 'black')
+        .attr('text-anchor', 'start')
+        .text(`↑ ${useMusicNotation ? '♫' : 'kHz'}`)
   }
 }
 
