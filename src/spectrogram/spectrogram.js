@@ -332,12 +332,25 @@ class SpectroPlaybackController {
 
 }
 
-function frequencyScaleAxis({minFrequency, maxFrequency, spectroHeight}) {
-  const frequencyScale = d3Scale.scaleLinear()
-    .domain([minFrequency, maxFrequency])
-    .range([spectroHeight, 0])
-  const frequencyAxis = d3Axis.axisLeft(frequencyScale)
-    .ticks(10)
+function frequencyScaleAxis({
+  minFrequency, 
+  maxFrequency, 
+  spectroHeight, 
+  scaleLogarithmic
+}) {
+  const scale = scaleLogarithmic ? 
+    d3Scale.scaleLog()
+      .base(2)
+      // domain must be > 0 for log scale
+      .domain([minFrequency || 1, maxFrequency])
+      .nice()
+      .range([spectroHeight, 0])
+    : d3Scale.scaleLinear()
+      .domain([minFrequency, maxFrequency])
+      .range([spectroHeight, 0])
+
+  const frequencyAxis = d3Axis.axisLeft(scale)
+    // .ticks(10)
     // convert to kHz
     .tickFormat(hz => `${hz / 1000}`)
 
@@ -383,9 +396,9 @@ class DisplayState {
   constructor() {
     this.displayStates = [
       {scaleLogarithmic: false, useMusicNotation: false},
-      {scaleLogarithmic: false, useMusicNotation: true},
-      {scaleLogarithmic: true, useMusicNotation: true},
       {scaleLogarithmic: true, useMusicNotation: false},
+      {scaleLogarithmic: true, useMusicNotation: true},
+      {scaleLogarithmic: false, useMusicNotation: true},
     ]
 
     this.position = 0
