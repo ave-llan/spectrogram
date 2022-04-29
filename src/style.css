@@ -1,14 +1,3 @@
-.triangle {
-  fill: none;
-  stroke: steelblue;
-  stroke-width: 0.02;
-  pointer-events: all;
-}
-
-.triangle:hover {
-  fill: lightblue;
-}
-
-.triangle .fill {
-  fill: orange;
+.button {
+  cursor:  pointer;
 }

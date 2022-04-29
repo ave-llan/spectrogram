@@ -193,6 +193,7 @@ class Spectrogram {
       })
     this.svg.append('g')
       .attr('class', 'yAxis')
+      .attr('class', 'button')
       .attr('transform', `translate(
         ${this.spectroMargin.left},${this.spectroMargin.top})`
       )
@@ -245,6 +246,7 @@ class SpectroPlaybackController {
 
     this.playbackIcon = svg.append('g')
       .attr('class', 'play-icon')
+      .attr('class', 'button')
       .attr('transform', 
         `translate(
           ${this.width - (iconSize + spectroMargin.right)},
