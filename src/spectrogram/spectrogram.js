@@ -115,7 +115,7 @@ class Spectrogram {
     (scaleLogarithmic ?  d3Scale.scaleLog().base(2) : d3Scale.scaleLinear())
       .domain([
         this.minFrequencyToRender || 1, 
-        this.frequencyData.maxFrequency
+        this.maxFrequencyToRender,
       ])
       .range([this.spectroHeight, 0])
 
@@ -181,13 +181,13 @@ class Spectrogram {
     const frequencyAxis = useMusicNotation ? 
       musicNotationAxis({
         minFrequency  : this.minFrequencyToRender, 
-        maxFrequency  : this.frequencyData.maxFrequency,
+        maxFrequency  : this.maxFrequencyToRender,
         spectroHeight : this.spectroHeight,
         scaleLogarithmic
       }) :
       frequencyScaleAxis({
-        minFrequency  : this.frequencyData.minFrequency, 
-        maxFrequency  : this.frequencyData.maxFrequency,
+        minFrequency  : this.minFrequencyToRender, 
+        maxFrequency  : this.maxFrequencyToRender,
         spectroHeight : this.spectroHeight,
         scaleLogarithmic
       })
