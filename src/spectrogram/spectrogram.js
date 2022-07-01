@@ -450,7 +450,10 @@ class DisplayState {
 
 function logAndClearPerformanceMeasures() {
   performance.getEntriesByType('measure')
-    .sort((a,b) => a.startTime - b.startTime)
+    .sort((a,b) => 
+      (a.startTime - b.startTime) || 
+      // If startTime is equal, show the one that finishes last first.
+      (b.duration - a.duration) )
     .forEach(m => 
       console.log(
         `${m.name.padEnd(20)} ` + 
