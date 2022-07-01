@@ -77,9 +77,11 @@ class Spectrogram {
    * @return {!Spectrogram}
    */
   static async fromFile(audioFile, {width = 1300, height = 400} = {}) {
+    performance.mark('Spectrogram.fromFile')
+
     performance.mark('decodeAudioFromFile')
     const audioData = await AudioData.fromFile(audioFile)
-    console.log(performance.measure('decodeAudioFromFile'))
+    performance.measure('decodeAudioFromFile', 'decodeAudioFromFile')
 
     performance.mark('getFrequencyData')
     const frequencyData = await audioData.getFrequencyData({
@@ -88,8 +90,14 @@ class Spectrogram {
       maxFrequency          : 11000,
       smoothingTimeConstant : 0.8,
     })
-    console.log(performance.measure('getFrequencyData'))
-    return new Spectrogram({audioData, frequencyData, width, height})
+    performance.measure('getFrequencyData', 'getFrequencyData')
+
+    const spectrogram = new Spectrogram(
+      {audioData, frequencyData, width, height})
+    performance.measure('Spectrogram.fromFile', 'Spectrogram.fromFile')
+
+    logAndClearPerformanceMeasures()
+    return spectrogram
   }
 
   /**
@@ -152,7 +160,7 @@ class Spectrogram {
         )
       }
     }
-    console.log(performance.measure('drawSpectrogramData'))
+    performance.measure('drawSpectrogramData', 'drawSpectrogramData')
   }
 
   /**
@@ -160,6 +168,8 @@ class Spectrogram {
    * @private
    */
   drawSpectrogramAxis({useMusicNotation = true, scaleLogarithmic = true} = {}) {
+    performance.mark('drawSpectrogramAxis')
+
     // Clear current scales in case this is a re-draw
     this.svg.select('.xAxis').remove()
     this.svg.select('.yAxis').remove()
@@ -216,6 +226,8 @@ class Spectrogram {
       .attr('fill', 'black')
       .attr('text-anchor', 'start')
       .text(`↑ ${useMusicNotation ? '♫' : 'kHz'}`)
+
+    performance.measure('drawSpectrogramAxis', 'drawSpectrogramAxis')
   }
 }
 
@@ -434,6 +446,19 @@ class DisplayState {
   getState() {
     return this.displayStates[this.position]
   }
+}
+
+function logAndClearPerformanceMeasures() {
+  performance.getEntriesByType('measure')
+    .sort((a,b) => a.startTime - b.startTime)
+    .forEach(m => 
+      console.log(
+        `${m.name.padEnd(20)} ` + 
+        `startTime: ${m.startTime.toFixed(1).padStart(6)}  ` +
+        `duration: ${m.duration.toFixed(1).padStart(6)}` + 
+        ' ['.padStart(m.startTime / 20).padEnd(m.duration / 20, '*') + ']'))
+  performance.clearMarks()
+  performance.clearMeasures()
 }
 
 export {Spectrogram}
