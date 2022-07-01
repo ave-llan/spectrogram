@@ -77,13 +77,18 @@ class Spectrogram {
    * @return {!Spectrogram}
    */
   static async fromFile(audioFile, {width = 1300, height = 400} = {}) {
+    performance.mark('decodeAudioFromFile')
     const audioData = await AudioData.fromFile(audioFile)
+    console.log(performance.measure('decodeAudioFromFile'))
+
+    performance.mark('getFrequencyData')
     const frequencyData = await audioData.getFrequencyData({
       sampleTimeLength      : 1/140,
       fftSize               : 2 ** 11,
       maxFrequency          : 11000,
       smoothingTimeConstant : 0.8,
     })
+    console.log(performance.measure('getFrequencyData'))
     return new Spectrogram({audioData, frequencyData, width, height})
   }
 
@@ -107,6 +112,8 @@ class Spectrogram {
    * @private
    */ 
   drawSpectrogramData(data,  {scaleLogarithmic = true} = {}) {
+    performance.mark('drawSpectrogramData')
+
     this.sonogramCtx.fillStyle = 'rgb(240, 240, 240)'
     this.sonogramCtx.fillRect(0, 0, this.spectroWidth, this.spectroHeight)
 
@@ -145,6 +152,7 @@ class Spectrogram {
         )
       }
     }
+    console.log(performance.measure('drawSpectrogramData'))
   }
 
   /**
