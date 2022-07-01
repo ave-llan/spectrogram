@@ -1,7 +1,7 @@
 import * as d3Axis from 'd3-axis'
 import * as d3Selection from 'd3-selection'
 import * as d3Scale from 'd3-scale'
-import {AudioData} from 'audio-frequency'
+import {AudioData} from './audio-data.js'
 import playIcon from '../resources/play_icon.svg'
 import stopIcon from '../resources/stop_icon.svg'
 
