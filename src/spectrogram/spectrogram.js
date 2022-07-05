@@ -87,7 +87,7 @@ class Spectrogram {
     const frequencyData = await audioData.getFrequencyData({
       sampleTimeLength      : 1/140,
       fftSize               : 2 ** 11,
-      maxFrequency          : 11000,
+      maxFrequency          : 14080,
       smoothingTimeConstant : 0.8,
     })
     performance.measure('getFrequencyData', 'getFrequencyData')
