@@ -138,7 +138,7 @@ class Spectrogram {
       : 
       (d3Scale.scaleLinear()
         .domain([0, this.spectroHeight])
-        .range([this.maxFrequencyToRender, this.minFrequencyToRender]))
+        .range([this.minFrequencyToRender, this.maxFrequencyToRender]))
 
     for (let x = 0; x < this.spectroWidth; x++) {
       for (let y = 0; y < this.spectroHeight; y++) {
