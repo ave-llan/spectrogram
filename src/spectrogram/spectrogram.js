@@ -86,9 +86,9 @@ class Spectrogram {
     performance.mark('getFrequencyData')
     const frequencyData = await audioData.getFrequencyData({
       sampleTimeLength      : 1/140,
-      fftSize               : 2 ** 11,
+      fftSize               : 2 ** 9,
       maxFrequency          : 14080,
-      smoothingTimeConstant : 0.8,
+      smoothingTimeConstant : 0.2 ,
     })
     performance.measure('getFrequencyData', 'getFrequencyData')
 
@@ -122,10 +122,13 @@ class Spectrogram {
   drawSpectrogramData(data, {scaleLogarithmic = true} = {}) {
     performance.mark('drawSpectrogramData')
 
-    const byteCount = 4 * this.spectroWidth * this.spectroHeight
+    const width = this.spectroWidth * 1
+    const height = this.spectroHeight * 1
+
+    const byteCount = 4 * width * height
     const imageArray = new Uint8ClampedArray(byteCount)
-    console.log(this.frequencyData.sampleTimeLength)
-    const pixelWidthPerSample =  data.length / this.spectroWidth 
+    console.log('data.length: ' + data.length)
+    const pixelWidthPerSample =  data.length / width 
     console.log('pixelWidthPerSample: ', pixelWidthPerSample)
 
     const xToSample = (x) => Math.floor(x * pixelWidthPerSample)
@@ -133,31 +136,36 @@ class Spectrogram {
     scaleLogarithmic ?  
       (d3Scale.scalePow()
         .exponent(2)
-        .domain([0, this.spectroHeight])
+        .domain([0, height])
         .range([this.minFrequencyToRender, this.maxFrequencyToRender])) 
       : 
       (d3Scale.scaleLinear()
-        .domain([0, this.spectroHeight])
+        .domain([0, height])
         .range([this.minFrequencyToRender, this.maxFrequencyToRender]))
 
-    for (let x = 0; x < this.spectroWidth; x++) {
-      for (let y = 0; y < this.spectroHeight; y++) {
+    const decibelToColorScale =
+    d3Scale.scalePow()
+      .exponent(1.25)
+      .domain([0, 255])
+      .range([0, 255])
 
+    for (let x = 0; x < width; x++) {
+      for (let y = 0; y < height; y++) {
         const decibel = this.frequencyData.decibelFor(
-          xToSample(x), frequencyScale(this.spectroHeight - y))
-        const r = y * (this.spectroWidth) * 4 + x * 4
+          xToSample(x), frequencyScale(height - y))
+        const r = y * (width) * 4 + x * 4
         // rgba(70, 130, 180) is steelblue
         imageArray[r] = 70           // red
         imageArray[r + 1] = 130      // green
         imageArray[r + 2] = 180      // blue
-        imageArray[r + 3] =  decibel // alpha
+        imageArray[r + 3] =  Math.floor(decibelToColorScale(decibel)) // alpha
       }
     }
 
     const imageData = new ImageData(
       imageArray,
-      this.spectroWidth, 
-      this.spectroHeight)
+      width, 
+      height)
 
     this.sonogramCtx.putImageData(imageData, 0, 0)
     performance.measure(
