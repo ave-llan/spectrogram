@@ -130,15 +130,21 @@ class Spectrogram {
 
     const xToSample = (x) => Math.floor(x * pixelWidthPerSample)
     const frequencyScale = 
-    (scaleLogarithmic ?  d3Scale.scaleLog().base(2) : d3Scale.scaleLinear())
-      .domain([0, this.spectroHeight])
-      .range([this.maxFrequencyToRender, this.minFrequencyToRender])
+    scaleLogarithmic ?  
+      (d3Scale.scalePow()
+        .exponent(2)
+        .domain([0, this.spectroHeight])
+        .range([this.minFrequencyToRender, this.maxFrequencyToRender])) 
+      : 
+      (d3Scale.scaleLinear()
+        .domain([0, this.spectroHeight])
+        .range([this.maxFrequencyToRender, this.minFrequencyToRender]))
 
     for (let x = 0; x < this.spectroWidth; x++) {
       for (let y = 0; y < this.spectroHeight; y++) {
 
         const decibel = this.frequencyData.decibelFor(
-          xToSample(x), frequencyScale(y))
+          xToSample(x), frequencyScale(this.spectroHeight - y))
         const r = y * (this.spectroWidth) * 4 + x * 4
         // rgba(70, 130, 180) is steelblue
         imageArray[r] = 70           // red
