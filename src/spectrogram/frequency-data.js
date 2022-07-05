@@ -92,6 +92,24 @@ class FrequencyData {
   timeAtSample(sampleIndex) {
     return sampleIndex * this.sampleTimeLength
   }
+
+  /**
+   * @param {number} sampleIndex Index of the sample (x axis)
+   * @param {number} frequency
+   * @return {number} decibel value between 0 and 255
+   */
+  decibelFor(sampleIndex, frequency) {
+    if(frequency < this.minFrequency) {
+      throw Error('Requested frequency below minFrequency: ' + frequency)
+    }
+    if(frequency > this.maxFrequency) {
+      return 0
+    }
+
+    const frequencyBin = Math.floor(
+      (frequency - this.minFrequency) / this.frequencyBandSize)
+    return this.data[sampleIndex][frequencyBin]
+  }
 }
 
 export {FrequencyData}
