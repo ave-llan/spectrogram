@@ -64,7 +64,7 @@ class Spectrogram {
 
     this.drawSpectrogram(this.displayState.getState())
     new SpectroPlaybackController({
-      audioBuffer   : audioData.buffer,
+      audioData     : this.audioData,
       svg           : this.svg, 
       width         : this.width, 
       height        : this.height, 
@@ -264,9 +264,9 @@ class Spectrogram {
  *  Adds playback functionality to spectrogram.
  */
 class SpectroPlaybackController {
-  constructor({audioBuffer, svg, height, width, spectroMargin, iconSize = 30}) {
+  constructor({audioData, svg, height, width, spectroMargin, iconSize = 30}) {
 
-    this.audioBuffer = audioBuffer
+    this.audioData = audioData
     this.audioContext = new AudioContext()
 
     /** @type {number} padding around spectrogram */
@@ -285,6 +285,10 @@ class SpectroPlaybackController {
     this.playbacknode,
     this.playbackLineAnimationId,
     this.playbackStartedAt
+
+    /** @type {number} When (in seconds) to start playback */
+    this.playbackSelectionStart = 0
+    this.playbackSelectionEnd =  this.audioData.duration
 
     this.playbackSelectionLine = svg
       .append('g')
@@ -385,7 +389,7 @@ class SpectroPlaybackController {
   animatePlaybackLine() {
     // Draw a vertical line to show current position of playback
     const timeElapsed = this.audioContext.currentTime - this.playbackStartedAt
-    const percentComplete = timeElapsed / this.audioBuffer.duration 
+    const percentComplete = timeElapsed / this.audioData.duration 
 
     const xPosition = this.spectroMargin.left 
       + this.spectroWidth * percentComplete
@@ -403,6 +407,11 @@ class SpectroPlaybackController {
       .attr('opacity', 1.0)
       .attr('x1', xPosition)
       .attr('x2', xPosition)
+
+    const xPercentage = 
+      (xPosition - this.spectroMargin.left) / this.spectroWidth
+
+    this.playbackSelectionStart = this.audioData.duration * xPercentage
   }
 
   /**
@@ -430,7 +439,7 @@ class SpectroPlaybackController {
     this.playbackActive = !this.playbackActive
     if (this.playbackActive) {
       this.playbackNode = this.playBuffer({
-        buffer: this.audioBuffer,
+        buffer: this.getBufferForPlayback(),
       })
       this.animatePlaybackLine()
     } else if (this.playbackNode) {
@@ -438,6 +447,19 @@ class SpectroPlaybackController {
     }
   }
 
+  /**
+   * @return {!AudioBuffer} audioBuffer for playback, taking into account the
+   *     playback selection, if any.
+   */ 
+  getBufferForPlayback() {
+    if (this.playbackSelectionStart == 0 
+      && this.playbackSelectionEnd == this.audioData.duration) {
+      return this.audioData.buffer
+    } else {
+      return this.audioData.slice(
+        this.playbackSelectionStart, this.playbackSelectionEnd).buffer
+    }
+  }
 }
 
 function frequencyScaleAxis({
