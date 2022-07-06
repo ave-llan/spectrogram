@@ -1,5 +1,5 @@
 # Spectrogram
-Given audio, visualizes as a spectrogram in D3.
+Given audio, visualizes as a spectrogram. Provides basic playback controls.
 
 ## Development instructions
 Clone this repository and run `npm install`.
