@@ -107,8 +107,10 @@ class Spectrogram {
       {
         audioData, 
         frequencyData, 
-        width  : width || frequencyData.data.length * sizeScale, 
-        height : height || frequencyData.frequencyBinCount * sizeScale,
+        width: Math.floor(
+          width || frequencyData.data.length * sizeScale), 
+        height: Math.floor(
+          height || frequencyData.frequencyBinCount * sizeScale),
       })
     performance.measure('Spectrogram.fromFile', 'Spectrogram.fromFile')
 
