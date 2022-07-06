@@ -123,9 +123,6 @@ class Spectrogram {
    * Draws spectrogram data and axis.
    */
   drawSpectrogram({scaleLogarithmic, useMusicNotation}) {
-    console.log('drawSpectrogram')
-    console.log('scaleLogarithmic', scaleLogarithmic)
-    console.log('useMusicNotation', useMusicNotation)
     this.drawSpectrogramData(this.frequencyData.data, {scaleLogarithmic})
     this.drawSpectrogramAxis({useMusicNotation, scaleLogarithmic})
   }
@@ -146,9 +143,7 @@ class Spectrogram {
 
     const byteCount = 4 * width * height
     const imageArray = new Uint8ClampedArray(byteCount)
-    console.log('data.length: ' + data.length)
     const pixelWidthPerSample =  data.length / width 
-    console.log('pixelWidthPerSample: ', pixelWidthPerSample)
 
     const xToSample = (x) => Math.floor(x * pixelWidthPerSample)
     const frequencyScale = 
@@ -278,8 +273,6 @@ class SpectroPlaybackController {
       - this.spectroMargin.left 
       - this.spectroMargin.right
     this.spectroHeight = height - spectroMargin.top - spectroMargin.bottom
-    console.log(this.spectroMargin)
-    console.log(this.width, this.height )
 
     this.playbackActive = false
     this.playbacknode,
@@ -342,7 +335,6 @@ class SpectroPlaybackController {
     // Add event listern for playbackSelectionLine.
     svg
       .on('mousedown', ({offsetX, offsetY}) => {
-        console.log('offset: x: ', offsetX, '    y: ', offsetY)
         if (this.clickIsWithinSpectrogram(offsetX, offsetY)) {
           this.setPlaybackSelectionLine(offsetX)
         }
@@ -575,7 +567,7 @@ function logAndClearPerformanceMeasures() {
         `startTime: ${m.startTime.toFixed(1).padStart(6)}  ` +
         `duration: ${m.duration.toFixed(1).padStart(6)}` + 
         // Log a simple timeline.
-        ' ['.padStart(m.startTime / 50).padEnd(m.duration / 50, '*') + ']'))
+        ' ['.padStart(m.startTime / 5).padEnd(m.duration / 5, '*') + ']'))
   performance.clearMarks()
   performance.clearMeasures()
 }
