@@ -388,8 +388,9 @@ class SpectroPlaybackController {
    */
   animatePlaybackLine() {
     // Draw a vertical line to show current position of playback
-    const timeElapsed = this.audioContext.currentTime - this.playbackStartedAt
-    const percentComplete = timeElapsed / this.audioData.duration 
+    const timePosition = this.audioContext.currentTime 
+      - (this.playbackStartedAt - this.playbackSelectionStart)
+    const percentComplete = timePosition / this.audioData.duration 
 
     const xPosition = this.spectroMargin.left 
       + this.spectroWidth * percentComplete
