@@ -274,12 +274,28 @@ class SpectroPlaybackController {
     this.width = width,
     this.height = height,
     this.spectroMargin = spectroMargin
+    this.spectroWidth = width
+      - this.spectroMargin.left 
+      - this.spectroMargin.right
+    this.spectroHeight = height - spectroMargin.top - spectroMargin.bottom
+    console.log(this.spectroMargin)
+    console.log(this.width, this.height )
 
     this.playbackActive = false
     this.playbacknode,
     this.playbackLineAnimationId,
     this.playbackStartedAt
 
+    this.playbackSelectionLine = svg
+      .append('g')
+      .attr('class', 'playbackSelectionLine')
+      .append('line')
+      .attr('x1', spectroMargin.left)
+      .attr('x2', spectroMargin.left)
+      .attr('y1', spectroMargin.top)
+      .attr('y2', this.height - spectroMargin.bottom)
+      .attr('stroke', 'grey')
+      .attr('opacity', 0)
 
     this.playbackLine = svg
       .append('g')
@@ -309,12 +325,40 @@ class SpectroPlaybackController {
 
     // Add event listeners for playback.
     this.playbackIcon
-      .on('click', () => this.togglePlayback())
+      .on('click', (event) => {
+        event.stopPropagation()
+        this.togglePlayback()
+      })
     document.addEventListener('keydown', ({code}) => {
       if (code == 'Space') {
         this.togglePlayback()
       }
     })
+
+    // Add event listern for playbackSelectionLine.
+    svg
+      .on('mousedown', ({offsetX, offsetY}) => {
+        console.log('offset: x: ', offsetX, '    y: ', offsetY)
+        if (this.clickIsWithinSpectrogram(offsetX, offsetY)) {
+          this.setPlaybackSelectionLine(offsetX)
+        }
+      })
+  }
+
+  /**
+   * @param {number} x
+   * @param {number} y
+   * @return {boolean} True if the click is within the spectrogram display (not
+   *     just the canvas as a whole).
+   */
+  clickIsWithinSpectrogram(x, y) {
+    if (x < this.spectroMargin.left || 
+        x - this.spectroMargin.left > this.spectroWidth ||
+        y < this.spectroMargin.top ||
+        y - this.spectroMargin.top > this.spectroHeight) {
+      return false
+    }
+    return true
   }
 
   /**
@@ -343,10 +387,8 @@ class SpectroPlaybackController {
     const timeElapsed = this.audioContext.currentTime - this.playbackStartedAt
     const percentComplete = timeElapsed / this.audioBuffer.duration 
 
-    const spectroWidth = this.width 
-      - this.spectroMargin.left 
-      - this.spectroMargin.right
-    const xPosition = this.spectroMargin.left + spectroWidth * percentComplete
+    const xPosition = this.spectroMargin.left 
+      + this.spectroWidth * percentComplete
 
     this.playbackLine
       .attr('x1', xPosition)
@@ -354,6 +396,13 @@ class SpectroPlaybackController {
 
     this.playbackLineAnimationId = 
       requestAnimationFrame(() => this.animatePlaybackLine())
+  }
+
+  setPlaybackSelectionLine(xPosition) {
+    this.playbackSelectionLine
+      .attr('opacity', 1.0)
+      .attr('x1', xPosition)
+      .attr('x2', xPosition)
   }
 
   /**
