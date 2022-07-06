@@ -299,18 +299,6 @@ class SpectroPlaybackController {
           ${this.width - (iconSize + spectroMargin.right)},
           ${spectroMargin.top - this.spectroPadding - iconSize})`
       )
-      .on('click', () => {
-        this.updatePlaybackButtonAndLineAnimation(!this.playbackActive)
-        this.playbackActive = !this.playbackActive
-        if (this.playbackActive) {
-          this.playbackNode = this.playBuffer({
-            buffer: this.audioBuffer,
-          })
-          this.animatePlaybackLine()
-        } else if (this.playbackNode) {
-          this.playbackNode.stop()
-        }
-      })
 
     this.playbackIcon.append('image')
       .attr('id', 'playback-icon')
@@ -318,6 +306,15 @@ class SpectroPlaybackController {
       .attr('height', iconSize)
       .attr('xlink:href', playIcon)
       .attr('opacity', 0.25)
+
+    // Add event listeners for playback.
+    this.playbackIcon
+      .on('click', () => this.togglePlayback())
+    document.addEventListener('keydown', ({code}) => {
+      if (code == 'Space') {
+        this.togglePlayback()
+      }
+    })
   }
 
   /**
@@ -377,6 +374,19 @@ class SpectroPlaybackController {
     this.playbackStartedAt = this.audioContext.currentTime
 
     return source
+  }
+
+  togglePlayback() {
+    this.updatePlaybackButtonAndLineAnimation(!this.playbackActive)
+    this.playbackActive = !this.playbackActive
+    if (this.playbackActive) {
+      this.playbackNode = this.playBuffer({
+        buffer: this.audioBuffer,
+      })
+      this.animatePlaybackLine()
+    } else if (this.playbackNode) {
+      this.playbackNode.stop()
+    }
   }
 
 }

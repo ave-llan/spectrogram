@@ -286,4 +286,12 @@ function steelBlue(decibel) {
   return [70, 130, 180, decibel] 
 }
 
-export {gouldianColor, steelBlue}
+/**
+ * @param {number} decibel An Integer between 0-255.
+ * @return {!Array<number>} four item array of numbers representing rgba
+ */
+function greyScale(decibel) {
+  return [0, 0, 0, decibel] 
+} 
+
+export {gouldianColor, greyScale, steelBlue}
