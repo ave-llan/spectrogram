@@ -391,7 +391,6 @@ class SpectroPlaybackController {
     const timePosition = this.audioContext.currentTime 
       - (this.playbackStartedAt - this.playbackSelectionStart)
     const percentComplete = timePosition / this.audioData.duration 
-
     const xPosition = this.spectroMargin.left 
       + this.spectroWidth * percentComplete
 
@@ -404,6 +403,11 @@ class SpectroPlaybackController {
   }
 
   setPlaybackSelectionLine(xPosition) {
+    const playbackWasActive = this.playbackActive
+    if (playbackWasActive) {
+      // Stop current playback.
+      this.togglePlayback()
+    }
     this.playbackSelectionLine
       .attr('opacity', 1.0)
       .attr('x1', xPosition)
