@@ -102,6 +102,32 @@ class AudioData {
       audioBufferSource.start()
     })  
   }
+
+  /**
+   * A new sliced version of this AudioData.
+   * @param {number} startTime Start time for new buffer, in seconds.
+   * @param {number} endTime End time for new buffer, in seconds.
+   * @return {AudioData} audioData Sliced version of this AudioData.
+   */
+  slice(startTime, endTime) {
+    const audioContext = new AudioContext()
+
+    const sliceStart = startTime * this.sampleRate 
+    const sliceEnd = endTime * this.sampleRate
+    const numberOfSamples = sliceEnd - sliceStart
+
+    const slicedBuffer = audioContext.createBuffer(
+      this.numberOfChannels, numberOfSamples, this.sampleRate)
+    const slicedChannelData = new Float32Array(numberOfSamples)
+
+    for (let channelNumber = 0; channelNumber < this.numberOfChannels; 
+      channelNumber++) {
+      this.buffer.copyFromChannel(slicedChannelData, channelNumber, sliceStart)
+      slicedBuffer.copyToChannel(slicedChannelData, channelNumber)
+    }
+
+    return new AudioData(slicedBuffer) 
+  }
 }
 
 export {AudioData}
