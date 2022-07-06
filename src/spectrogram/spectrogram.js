@@ -74,9 +74,20 @@ class Spectrogram {
   /**
    * New Spectrogram given an audioFile path. 
    * @param {string} audioFile path to audio file
+   * @param {{
+   *     width: (number|undefined),
+   *     height: (number|undefined),
+   *     sizeScale: (number|undefined),
+   *     }=} options
+   *         width The width in pixels of the spectrogram, defaults to the 
+   *             number of samples in the frequency data.
+   *         height The height in pixels of the spectrogram, defaults to the
+   *             number of frequency bins in the frequency data.
+   *         sizeScale If width and/or height is not set, scales them by this
+   *             amount.
    * @return {!Spectrogram}
    */
-  static async fromFile(audioFile, {width = 1300, height = 400} = {}) {
+  static async fromFile(audioFile, {width, height, sizeScale = 2} = {}) {
     performance.mark('Spectrogram.fromFile')
 
     performance.mark('decodeAudioFromFile')
@@ -88,12 +99,17 @@ class Spectrogram {
       sampleTimeLength      : 1/140,
       fftSize               : 2 ** 9,
       maxFrequency          : 14080,
-      smoothingTimeConstant : 0.2 ,
+      smoothingTimeConstant : 0.2,
     })
     performance.measure('getFrequencyData', 'getFrequencyData')
 
     const spectrogram = new Spectrogram(
-      {audioData, frequencyData, width, height})
+      {
+        audioData, 
+        frequencyData, 
+        width  : width || frequencyData.data.length * sizeScale, 
+        height : height || frequencyData.frequencyBinCount * sizeScale,
+      })
     performance.measure('Spectrogram.fromFile', 'Spectrogram.fromFile')
 
     logAndClearPerformanceMeasures()
