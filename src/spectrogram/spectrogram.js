@@ -2,6 +2,7 @@ import * as d3Axis from 'd3-axis'
 import * as d3Selection from 'd3-selection'
 import * as d3Scale from 'd3-scale'
 import {AudioData} from './audio-data.js'
+import {gouldianColor} from '../resources/color.js'
 import playIcon from '../resources/play_icon.svg'
 import stopIcon from '../resources/stop_icon.svg'
 
@@ -161,9 +162,9 @@ class Spectrogram {
         .domain([0, height])
         .range([this.minFrequencyToRender, this.maxFrequencyToRender]))
 
-    const decibelToColorScale =
+    const scaleDecibels = 
     d3Scale.scalePow()
-      .exponent(1.25)
+      .exponent(1) // Optional: increase to weight higher decibels more. 
       .domain([0, 255])
       .range([0, 255])
 
@@ -171,12 +172,13 @@ class Spectrogram {
       for (let y = 0; y < height; y++) {
         const decibel = this.frequencyData.decibelFor(
           xToSample(x), frequencyScale(height - y))
-        const r = y * (width) * 4 + x * 4
-        // rgba(70, 130, 180) is steelblue
-        imageArray[r] = 70           // red
-        imageArray[r + 1] = 130      // green
-        imageArray[r + 2] = 180      // blue
-        imageArray[r + 3] =  Math.floor(decibelToColorScale(decibel)) // alpha
+        const rIndex = y * (width) * 4 + x * 4
+        const [red, green, blue, alpha] = gouldianColor(
+          Math.floor(scaleDecibels(decibel)))
+        imageArray[rIndex] = red          
+        imageArray[rIndex + 1] = green 
+        imageArray[rIndex + 2] = blue   
+        imageArray[rIndex + 3] =  alpha 
       }
     }
 
