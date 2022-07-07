@@ -1,3 +1,17 @@
 .button {
   cursor:  pointer;
 }
+
+.axis {
+  color:  grey;
+  opacity:  0;
+  transition: opacity 0.3s;
+}
+
+.spectrogramVisualizer:hover .axis {
+  opacity:  1;
+}
+
+.axis text {
+  fill: grey;
+}

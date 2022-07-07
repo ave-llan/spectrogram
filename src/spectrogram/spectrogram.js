@@ -205,7 +205,7 @@ class Spectrogram {
     const timeAxis = d3Axis.axisBottom(timeScale)
       .ticks(Math.floor(this.frequencyData.duration))
     this.svg.append('g')
-      .attr('class', 'xAxis')
+      .attr('class', 'xAxis axis')
       .attr('transform', `translate(
         ${this.spectroMargin.left},${this.height - this.spectroMargin.bottom})`
       )
@@ -215,7 +215,7 @@ class Spectrogram {
       .append('text')
       // Position axis label with enough room below axis ticks
       .attr('transform', `translate(${this.spectroWidth},${30})`)
-      .attr('fill', 'black')
+      // .attr('fill', 'black')
       .attr('text-anchor', 'end')
       .text('seconds  →')
 
@@ -234,7 +234,7 @@ class Spectrogram {
         scaleLogarithmic
       })
     this.svg.append('g')
-      .attr('class', 'yAxis button')
+      .attr('class', 'yAxis button axis')
       .attr('transform', `translate(
         ${this.spectroMargin.left},${this.spectroMargin.top})`
       )
@@ -247,7 +247,7 @@ class Spectrogram {
       .append('text')
       // Position axis label so arrow roughly aligns with y axis
       .attr('transform', `translate(${-3},${-5})`)
-      .attr('fill', 'black')
+      // .attr('fill', 'black')
       .attr('text-anchor', 'start')
       .text(`↑ ${useMusicNotation ? '♫' : 'kHz'}`)
 
