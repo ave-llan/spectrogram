@@ -7,7 +7,13 @@ import playIcon from '../resources/play_icon.svg'
 import stopIcon from '../resources/stop_icon.svg'
 
 class Spectrogram {
-  constructor({audioData, frequencyData, width = 1300, height = 400}) {
+  constructor({
+    audioData, 
+    frequencyData, 
+    width = 1300, 
+    height = 400,
+    showAxes = true
+  }) {
     /** @type {!AudioData} */
     this.audioData = audioData,
 
@@ -22,6 +28,9 @@ class Spectrogram {
 
     /** @type {number} height of the Spectrogram visualizer tool. */
     this.height = height
+
+    /** @type {boolean} whether or not the axes should be shown. */
+    this.showAxes = showAxes
 
     this.spectroMargin = {top: 40, right: 20, bottom: 40, left: 40}
     this.spectroWidth = this.width 
@@ -86,9 +95,12 @@ class Spectrogram {
    *             number of frequency bins in the frequency data.
    *         sizeScale If width and/or height is not set, scales them by this
    *             amount.
+   *         showAxes True if axes should be rendered to show time and
+   *             frequency values.
    * @return {!Spectrogram}
    */
-  static async fromFile(audioFile, {width, height, sizeScale = 2} = {}) {
+  static async fromFile(audioFile, 
+    {width, height, sizeScale = 2, showAxes = true} = {}) {
     performance.mark('Spectrogram.fromFile')
 
     performance.mark('decodeAudioFromFile')
@@ -112,6 +124,7 @@ class Spectrogram {
           width || frequencyData.data.length * sizeScale), 
         height: Math.floor(
           height || frequencyData.frequencyBinCount * sizeScale),
+        showAxes,
       })
     performance.measure('Spectrogram.fromFile', 'Spectrogram.fromFile')
 
@@ -124,7 +137,9 @@ class Spectrogram {
    */
   drawSpectrogram({scaleLogarithmic, useMusicNotation}) {
     this.drawSpectrogramData(this.frequencyData.data, {scaleLogarithmic})
-    this.drawSpectrogramAxis({useMusicNotation, scaleLogarithmic})
+    if (this.showAxes) {
+      this.drawSpectrogramAxis({useMusicNotation, scaleLogarithmic})
+    }
   }
 
   /** 
