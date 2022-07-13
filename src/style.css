@@ -2,15 +2,14 @@
   cursor:  pointer;
 }
 
-/*.axis {
-  color:  grey;
+.play-icon {
   opacity:  0;
   transition: opacity 0.3s;
 }
 
-.spectrogramVisualizer:hover .axis {
+.spectrogramVisualizer:hover .play-icon {
   opacity:  1;
-}*/
+}
 
 .axis text {
   fill: grey;
