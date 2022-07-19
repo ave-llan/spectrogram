@@ -1,4 +1,5 @@
 import * as d3Axis from 'd3-axis'
+import * as d3Brush from 'd3-brush'
 import * as d3Selection from 'd3-selection'
 import * as d3Scale from 'd3-scale'
 import {AudioData} from './audio-data.js'
@@ -309,6 +310,11 @@ class SpectroPlaybackController {
       .attr('stroke', 'grey')
       .attr('opacity', 0)
 
+    this.brush = d3Brush.brush()
+      .on('start brush end', (event) => {
+        console.log('brush: ', event.type, event)
+      })
+
     this.playbackLine = svg
       .append('g')
       .attr('class', 'playbackPositionLine')
@@ -354,6 +360,8 @@ class SpectroPlaybackController {
           this.setPlaybackSelectionLine(offsetX)
         }
       })
+    svg
+      .call(this.brush)
   }
 
   /**
