@@ -306,6 +306,9 @@ class SpectroPlaybackController {
     /** @type {number} When (in seconds) to start playback */
     this.playbackSelectionStart = 0
     this.playbackSelectionEnd =  this.audioData.duration
+    // Selection area in pixels.
+    this.selectionStart = {x: 0, y: 0}
+    this.selectionEnd = {x: this.spectroWidth, y: this.spectroHeight}
 
     // Create a new SVG overlay for selection UI. 
     this.selectionSvg = spectrogramDiv
@@ -327,10 +330,6 @@ class SpectroPlaybackController {
       .attr('y2', this.spectroHeight)
       .attr('stroke', 'grey')
       .attr('opacity', 0)
-
-    this.selectionStart = {x: 0, y: 0}
-    this.selectionEnd = {x: this.spectroWidth, y: this.spectroHeight}
-
 
     this.playbackLine = this.selectionSvg
       .append('g')
@@ -397,6 +396,9 @@ class SpectroPlaybackController {
         this.selectionStart.y = 0
         this.selectionEnd.x = this.spectroWidth
         this.selectionEnd.y = this.spectroHeight
+        this.setPlaybackTimerangeFromSelection(
+          this.selectionStart.x, 
+          this.selectionEnd.x)
       })
 
     // Add event listern for playbackSelectionLine based on end of brush event.
@@ -410,6 +412,10 @@ class SpectroPlaybackController {
             this.selectionStart.y], 
            [this.selectionEnd.x, 
             this.selectionEnd.y]] = selection 
+
+          this.setPlaybackTimerangeFromSelection(
+            this.selectionStart.x, 
+            this.selectionEnd.x)
         } else {
           // No selection, so activate playbackSelectionLine
           this.setPlaybackSelectionLine(this.selectionStart.x)
@@ -486,9 +492,6 @@ class SpectroPlaybackController {
       .attr('opacity', 1.0)
       .attr('x1', xPosition)
       .attr('x2', xPosition)
-
-    const xPercentage = xPosition / this.spectroWidth
-    this.playbackSelectionStart = this.audioData.duration * xPercentage
   }
 
   /**
@@ -536,6 +539,24 @@ class SpectroPlaybackController {
       return this.audioData.slice(
         this.playbackSelectionStart, this.playbackSelectionEnd).buffer
     }
+  }
+
+  /**
+   * Updates playback seleciton start and end (in seconds) based on UI selection
+   * range.
+   */
+  setPlaybackTimerangeFromSelection(startX, endX) {
+    this.playbackSelectionStart = this.getTimePositionFromX(startX)
+    this.playbackSelectionEnd = this.getTimePositionFromX(endX)
+  }
+
+  /**
+   * @param {number} xPosition
+   * @return {number} time position in seconds
+   */ 
+  getTimePositionFromX(xPosition) {
+    const xPercentage = xPosition / this.spectroWidth
+    return this.audioData.duration * xPercentage
   }
 }
 
