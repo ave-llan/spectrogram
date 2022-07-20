@@ -391,7 +391,12 @@ class SpectroPlaybackController {
 
         // Selection contains [[x1, y1], [x2, y2]] but we only need x1.
         const [[x1]] = selection 
+        // Reset selection from x1 to end in case user does not drag to make
+        // a more specific selection.
         this.selectionStart.x = x1
+        this.selectionStart.y = 0
+        this.selectionEnd.x = this.spectroWidth
+        this.selectionEnd.y = this.spectroHeight
       })
 
     // Add event listern for playbackSelectionLine based on end of brush event.
