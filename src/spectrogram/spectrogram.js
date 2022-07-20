@@ -383,6 +383,12 @@ class SpectroPlaybackController {
     // not drag (and we want to set playbackSelectionLine)
     this.brush
       .on('start', ({selection}) => {
+        const playbackWasActive = this.playbackActive
+        if (playbackWasActive) {
+          // Stop current playback.
+          this.togglePlayback()
+        }
+        
         // Hide previously selection playback line if it was visible, as the
         // user is making a new selection.
         this.playbackSelectionLine
@@ -482,11 +488,6 @@ class SpectroPlaybackController {
   }
 
   setPlaybackSelectionLine(xPosition) {
-    const playbackWasActive = this.playbackActive
-    if (playbackWasActive) {
-      // Stop current playback.
-      this.togglePlayback()
-    }
     this.playbackSelectionLine
       .attr('opacity', 1.0)
       .attr('x1', xPosition)
