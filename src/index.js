@@ -10,4 +10,4 @@ import towheeSong from './data/towhee-song.wav'
 import willow from './data/willow.wav'
 import willowTwoCalls from './data/willow-two-calls.wav'
 
-Spectrogram.fromFile(grosbeak, {sizeScale: 2, showAxes: false})
+Spectrogram.fromFile(grosbeak, {sizeScale: 2, showAxes: true})

@@ -74,11 +74,12 @@ class Spectrogram {
 
     this.drawSpectrogram(this.displayState.getState())
     new SpectroPlaybackController({
-      audioData     : this.audioData,
-      svg           : this.svg, 
-      width         : this.width, 
-      height        : this.height, 
-      spectroMargin : this.spectroMargin
+      audioData      : this.audioData,
+      spectrogramDiv : this.container,
+      spectorgramSvg : this.svg, 
+      width          : this.width, 
+      height         : this.height, 
+      spectroMargin  : this.spectroMargin
     })
   }
 
@@ -275,7 +276,14 @@ class Spectrogram {
  *  Adds playback functionality to spectrogram.
  */
 class SpectroPlaybackController {
-  constructor({audioData, svg, height, width, spectroMargin, iconSize = 30}) {
+  constructor({
+    audioData, 
+    spectrogramDiv,
+    spectorgramSvg, 
+    height, 
+    width, 
+    spectroMargin, 
+    iconSize = 30}) {
 
     this.audioData = audioData
     this.audioContext = new AudioContext()
@@ -299,34 +307,44 @@ class SpectroPlaybackController {
     this.playbackSelectionStart = 0
     this.playbackSelectionEnd =  this.audioData.duration
 
-    this.playbackSelectionLine = svg
+    // Create a new SVG overlay for selection UI. 
+    this.selectionSvg = spectrogramDiv
+      .append('svg')
+      .attr('class', 'selectionSvg')
+      .style('position', 'absolute')
+      .attr('width', this.spectroWidth)
+      .attr('height', this.spectroHeight)
+      .style('top', this.spectroMargin.top)
+      .style('left', this.spectroMargin.left)
+
+    this.playbackSelectionLine = this.selectionSvg
       .append('g')
       .attr('class', 'playbackSelectionLine')
       .append('line')
-      .attr('x1', spectroMargin.left)
-      .attr('x2', spectroMargin.left)
-      .attr('y1', spectroMargin.top)
-      .attr('y2', this.height - spectroMargin.bottom)
+      .attr('x1', 0)
+      .attr('x2', 0)
+      .attr('y1', 0)
+      .attr('y2', this.spectroHeight)
       .attr('stroke', 'grey')
       .attr('opacity', 0)
 
     this.brush = d3Brush.brush()
       .on('start brush end', (event) => {
-        console.log('brush: ', event.type, event)
+        console.log('brush: ', event.type, event.selection)
       })
 
-    this.playbackLine = svg
+    this.playbackLine = this.selectionSvg
       .append('g')
       .attr('class', 'playbackPositionLine')
       .append('line')
-      .attr('x1', spectroMargin.left)
-      .attr('x2', spectroMargin.left)
-      .attr('y1', spectroMargin.top)
-      .attr('y2', this.height - spectroMargin.bottom)
+      .attr('x1', 0)
+      .attr('x2', 0)
+      .attr('y1', 0)
+      .attr('y2', this.spectroHeight)
       .attr('stroke', 'black')
       .attr('opacity', 0)
 
-    this.playbackIcon = svg.append('g')
+    this.playbackIcon = spectorgramSvg.append('g')
       .attr('class', 'play-icon button')
       .attr('transform', 
         `translate(
@@ -354,13 +372,12 @@ class SpectroPlaybackController {
     })
 
     // Add event listern for playbackSelectionLine.
-    svg
-      .on('mousedown', ({offsetX, offsetY}) => {
-        if (this.clickIsWithinSpectrogram(offsetX, offsetY)) {
-          this.setPlaybackSelectionLine(offsetX)
-        }
+    this.selectionSvg
+      .on('mousedown', ({offsetX}) => {
+        this.setPlaybackSelectionLine(offsetX)
       })
-    svg
+    // TODO next: use selection SVG for playback line
+    this.selectionSvg
       .call(this.brush)
   }
 
@@ -428,9 +445,7 @@ class SpectroPlaybackController {
       .attr('x1', xPosition)
       .attr('x2', xPosition)
 
-    const xPercentage = 
-      (xPosition - this.spectroMargin.left) / this.spectroWidth
-
+    const xPercentage = xPosition / this.spectroWidth
     this.playbackSelectionStart = this.audioData.duration * xPercentage
   }
 
