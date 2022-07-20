@@ -328,10 +328,9 @@ class SpectroPlaybackController {
       .attr('stroke', 'grey')
       .attr('opacity', 0)
 
-    this.brush = d3Brush.brush()
-      .on('start brush end', (event) => {
-        console.log('brush: ', event.type, event.selection)
-      })
+    this.selectionStart = {x: 0, y: 0}
+    this.selectionEnd = {x: this.spectroWidth, y: this.spectroHeight}
+
 
     this.playbackLine = this.selectionSvg
       .append('g')
@@ -371,14 +370,52 @@ class SpectroPlaybackController {
       }
     })
 
-    // Add event listern for playbackSelectionLine.
-    this.selectionSvg
-      .on('mousedown', ({offsetX}) => {
-        this.setPlaybackSelectionLine(offsetX)
-      })
-    // TODO next: use selection SVG for playback line
+
+    /** @const {!Function} D3 brush UI controller for selecting a
+     *      two-dimensional region by clicking and dragging the mouse.
+     */
+    this.brush = d3Brush.brush()
+
+    // Activate brush on selection svg.
     this.selectionSvg
       .call(this.brush)
+
+    // At start of brush, capture beginning x1 position in case the user does
+    // not drag (and we want to set playbackSelectionLine)
+    this.brush
+      .on('start', ({selection}) => {
+        // Hide previously selection playback line if it was visible, as the
+        // user is making a new selection.
+        this.playbackSelectionLine
+          .attr('opacity', 0)
+
+        // Selection contains [[x1, y1], [x2, y2]] but we only need x1.
+        const [[x1]] = selection 
+        this.selectionStart.x = x1
+      })
+
+    // Add event listern for playbackSelectionLine based on end of brush event.
+    // If there is no selection at the end, instead set the time based 
+    // playback selection line.
+    this.brush
+      .on('end', ({selection}) => {
+        if (selection) {
+          // Capture selection.
+          [[this.selectionStart.x , 
+            this.selectionStart.y], 
+           [this.selectionEnd.x, 
+            this.selectionEnd.y]] = selection 
+        } else {
+          // No selection, so activate playbackSelectionLine
+          this.setPlaybackSelectionLine(this.selectionStart.x)
+        }
+      })
+      
+    this.brush
+      .on('brush', (event) => {
+        console.log('brush: ', event.selection)
+        // TODO: Show selection time points and frequency points while brushing.
+      })
   }
 
   /**
