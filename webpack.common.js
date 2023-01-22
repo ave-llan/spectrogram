@@ -1,5 +1,4 @@
 const path = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
   entry: {
@@ -13,6 +12,10 @@ module.exports = {
   module: {
     rules: [
       {
+        test: /\.html$/i,
+        use: 'html-loader',
+      },
+      {
         test: /\.css$/i,
         use: ['style-loader', 'css-loader'],
       },
@@ -24,12 +27,16 @@ module.exports = {
         test: /\.(wav|mp3|ogg)$/i,
         type: 'asset/resource',
       },
+      {
+        test: /\.(wav|mp3|ogg)$/i,
+        use: [{
+          loader: 'file-loader',
+          options: {
+            name: '[name].[ext]',
+            outputPath: '/audio/'
+          }
+        }]
+      },
     ],
   },
-  plugins: [
-    new HtmlWebpackPlugin({
-      title: 'Spectrogram tool',
-      template: 'src/index.html',
-    }),
-  ],
 };

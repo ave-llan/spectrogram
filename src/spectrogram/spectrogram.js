@@ -10,10 +10,11 @@ import stopIcon from '../resources/stop_icon.svg'
 class Spectrogram {
   constructor({
     audioData, 
-    frequencyData, 
+    frequencyData,
+    container,
     width = 1300, 
     height = 400,
-    showAxes = true
+    showAxes = true,
   }) {
     /** @type {!AudioData} */
     this.audioData = audioData,
@@ -42,7 +43,7 @@ class Spectrogram {
     this.displayState = new DisplayState()
 
     /** @type {!d3Selection.Selection} A div container for spectrogram tool. */
-    this.container = d3Selection.select('body')
+    this.container = container
       .append('div')
       .attr('class', 'spectrogramVisualizer')
       .style('width', `${this.width}px`)
@@ -84,13 +85,36 @@ class Spectrogram {
   }
 
   /**
+   * Creates a spectrogram for an Element, configured using attributes defined
+   * on that element.
+   * @param {!Element} containerElement
+   */
+  static forElement(containerElement) {
+    const container = d3Selection.select(containerElement)
+
+    return Spectrogram.fromFile(
+      container.attr('src'),
+      {
+        container : containerElement,
+        width     : container.attr('width'),
+        height    : container.attr('height'),
+        sizeScale : container.attr('sizeScale'),
+        showAxes  : container.attr('showAxes'),
+      }
+    )
+  }
+
+  /**
    * New Spectrogram given an audioFile path. 
    * @param {string} audioFile path to audio file
    * @param {{
+   *     container: (!Element|undefined), 
    *     width: (number|undefined),
    *     height: (number|undefined),
    *     sizeScale: (number|undefined),
    *     }=} options
+   *         container The selection in which to put the spectrogram.
+   *             If not defined, uses the body as a container. 
    *         width The width in pixels of the spectrogram, defaults to the 
    *             number of samples in the frequency data.
    *         height The height in pixels of the spectrogram, defaults to the
@@ -102,10 +126,11 @@ class Spectrogram {
    * @return {!Spectrogram}
    */
   static async fromFile(audioFile, 
-    {width, height, sizeScale = 2, showAxes = true} = {}) {
+    {container, width, height, sizeScale = 2, showAxes = true} = {}) {
     performance.mark('Spectrogram.fromFile')
 
     performance.mark('decodeAudioFromFile')
+    console.log("audiofile", audioFile)
     const audioData = await AudioData.fromFile(audioFile)
     performance.measure('decodeAudioFromFile', 'decodeAudioFromFile')
 
@@ -121,8 +146,9 @@ class Spectrogram {
     const spectrogram = new Spectrogram(
       {
         audioData, 
-        frequencyData, 
-        width: Math.floor(
+        frequencyData,
+        container : d3Selection.select(container || 'body'),
+        width     : Math.floor(
           width || frequencyData.data.length * sizeScale), 
         height: Math.floor(
           height || frequencyData.frequencyBinCount * sizeScale),
