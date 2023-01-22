@@ -130,7 +130,7 @@ class Spectrogram {
     performance.mark('Spectrogram.fromFile')
 
     performance.mark('decodeAudioFromFile')
-    console.log("audiofile", audioFile)
+    console.log('audiofile', audioFile)
     const audioData = await AudioData.fromFile(audioFile)
     performance.measure('decodeAudioFromFile', 'decodeAudioFromFile')
 

@@ -3,6 +3,9 @@ const common = require('./webpack.common.js');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = merge(common, {
+  entry: {
+    index: './src/index-dev.js',
+  },
   mode: 'development',
   devtool: 'inline-source-map',
   devServer: {
@@ -18,7 +21,7 @@ module.exports = merge(common, {
   plugins: [
     new HtmlWebpackPlugin({
       title: 'Spectrogram tool',
-      template: 'src/index.html',
+      template: 'src/index-dev.html',
     }),
   ],
 });
