@@ -176,7 +176,7 @@ class Spectrogram {
 
     const scaleDecibels = 
     d3Scale.scalePow()
-      .exponent(3) // Future UI control: slider to adjust this. 
+      .exponent(2) // Future UI control: slider to adjust this. 
       .domain([0, 255])
       .range([0, 255])
 
