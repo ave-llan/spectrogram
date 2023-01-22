@@ -99,7 +99,7 @@ class Spectrogram {
         width     : container.attr('width'),
         height    : container.attr('height'),
         sizeScale : container.attr('sizeScale'),
-        showAxes  : container.attr('showAxes'),
+        showAxes  : container.attr('showAxes') == 'true',
       }
     )
   }
