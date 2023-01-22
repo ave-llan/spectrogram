@@ -8,3 +8,8 @@ To start a server:
 ```
 npm run start
 ```
+
+To build a minified version for production:
+```
+npm run build
+```
