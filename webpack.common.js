@@ -22,7 +22,7 @@ module.exports = {
       },
       {
         test: /\.(svg)$/i,
-        type: 'asset/resource',
+        type: 'asset/inline',
       },
       {
         test: /\.(wav|mp3|ogg)$/i,
