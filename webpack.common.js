@@ -27,16 +27,9 @@ module.exports = {
       {
         test: /\.(wav|mp3|ogg)$/i,
         type: 'asset/resource',
-      },
-      {
-        test: /\.(wav|mp3|ogg)$/i,
-        use: [{
-          loader: 'file-loader',
-          options: {
-            name: '[name].[ext]',
-            outputPath: '/audio/'
-          }
-        }]
+        generator: {
+          filename: 'audio/[name][ext]'
+        }
       },
     ],
   },
