@@ -50,7 +50,7 @@ class Spectrogram {
     this.displayState = new DisplayState()
 
     /** @type {!d3Selection.Selection} A div container for spectrogram tool. */
-    container
+    this.container
       .style('width', `${this.width}px`)
       .style('height', `${this.height}px`)
       .style('position', 'relative')
