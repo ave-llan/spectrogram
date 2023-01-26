@@ -40,11 +40,12 @@ You can customize each `<spectrogram>` element with a number of other attritbute
 </spectrogram>
 ```
 
-Attribute    |  Default                                    |  Description
----------:   | :------------------------------------------ | :--------------------------------------------
- src         | (required)                                  | path to an audio file
- width       | frequency data length * sizeScale           | width of the spectrogram in pixels
- height      | frequency bin count * sizeScale             | height of the spectrogram in pixels
- sizeScale   | 1                                           | scaling factor for default width/height. Ignored if width/height is specified
- showAxes    | true                                        | false if the time and frequency axis around the spectrogram should be hidden
+Attribute         |  Default                                    |  Description
+---------:        | :------------------------------------------ | :--------------------------------------------
+ src              | (required)                                  | path to an audio file
+ width            | frequency data length * sizeScale           | width of the spectrogram in pixels
+ height           | frequency bin count * sizeScale             | height of the spectrogram in pixels
+ widthSizeScale   | (optional)                                  | optional scaling factor for width. Ignored if width is specified. 
+ heightSizeScale  | 2                                           | optional scaling factor for height. Ignored if height is specified
+ showAxes         | true                                        | false if the time and frequency axis around the spectrogram should be hidden
 

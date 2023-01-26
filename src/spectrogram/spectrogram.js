@@ -12,7 +12,7 @@ class Spectrogram {
     audioData, 
     frequencyData,
     container,
-    width = 1300, 
+    width, 
     height = 400,
     showAxes = true,
   }) {
@@ -25,8 +25,15 @@ class Spectrogram {
     this.minFrequencyToRender = 880,
     this.maxFrequencyToRender = 14080
 
-    /** @type {number} width of the Spectrogram visualizer tool. */
-    this.width = width,
+    this.container = container
+      .append('div')
+      .attr('class', 'spectrogramVisualizer')
+ 
+    /** 
+     * @type {number} width of the Spectrogram visualizer tool. If not set, uses
+     *   the max width available to the element.
+     */
+    this.width = width || container.node().offsetWidth
 
     /** @type {number} height of the Spectrogram visualizer tool. */
     this.height = height
@@ -43,9 +50,7 @@ class Spectrogram {
     this.displayState = new DisplayState()
 
     /** @type {!d3Selection.Selection} A div container for spectrogram tool. */
-    this.container = container
-      .append('div')
-      .attr('class', 'spectrogramVisualizer')
+    container
       .style('width', `${this.width}px`)
       .style('height', `${this.height}px`)
       .style('position', 'relative')
@@ -95,11 +100,12 @@ class Spectrogram {
     return Spectrogram.fromFile(
       container.attr('src'),
       {
-        container : containerElement,
-        width     : container.attr('width'),
-        height    : container.attr('height'),
-        sizeScale : container.attr('sizeScale'),
-        showAxes  : container.attr('showAxes') == 'true',
+        container       : containerElement,
+        width           : container.attr('width') || undefined,
+        height          : container.attr('height') || undefined,
+        widthSizeScale  : container.attr('widthSizeScale') || undefined,
+        heightSizeScale : container.attr('heightSizeScale') || undefined,
+        showAxes        : container.attr('showAxes') == 'true',
       }
     )
   }
@@ -126,7 +132,13 @@ class Spectrogram {
    * @return {!Spectrogram}
    */
   static async fromFile(audioFile, 
-    {container, width, height, sizeScale = 2, showAxes = true} = {}) {
+    {
+      container, 
+      width, 
+      height, 
+      widthSizeScale, 
+      heightSizeScale = 2, 
+      showAxes = true} = {}) {
     performance.mark('Spectrogram.fromFile')
 
     performance.mark('decodeAudioFromFile')
@@ -143,15 +155,19 @@ class Spectrogram {
     })
     performance.measure('getFrequencyData', 'getFrequencyData')
 
+    // If width is not set but widthSizeScale is, calculate width.
+    if (!width && widthSizeScale) {
+      width = frequencyData.data.length * widthSizeScale 
+    }
+    // Height is required
+    height = height || frequencyData.frequencyBinCount * heightSizeScale
     const spectrogram = new Spectrogram(
       {
         audioData, 
         frequencyData,
-        container : d3Selection.select(container || 'body'),
-        width     : Math.floor(
-          width || frequencyData.data.length * sizeScale), 
-        height: Math.floor(
-          height || frequencyData.frequencyBinCount * sizeScale),
+        container: d3Selection.select(container || 'body'),
+        width, 
+        height,
         showAxes,
       })
     performance.measure('Spectrogram.fromFile', 'Spectrogram.fromFile')
