@@ -3,6 +3,7 @@ import * as d3Brush from 'd3-brush'
 import * as d3Selection from 'd3-selection'
 import * as d3Scale from 'd3-scale'
 import {AudioData} from './audio-data.js'
+import {PerformanceMeasure} from './performance-measure.js'
 import {steelBlue} from '../resources/color.js'
 import playIcon from '../resources/play_icon.svg'
 import stopIcon from '../resources/stop_icon.svg'
@@ -15,6 +16,7 @@ class Spectrogram {
     width, 
     height = 400,
     showAxes = true,
+    performanceMeasure
   }) {
 
     /** @type {!AudioData} */
@@ -41,6 +43,10 @@ class Spectrogram {
 
     /** @type {boolean} whether or not the axes should be shown. */
     this.showAxes = showAxes
+
+    /** @type {!PerformanceMasure} */
+    this.performanceMeasure = performanceMeasure || 
+      new PerformanceMeasure(`${Math.random()}`)
 
     this.spectroMargin = {top: 40, right: 20, bottom: 40, left: 40}
     this.spectroWidth = this.width 
@@ -140,21 +146,24 @@ class Spectrogram {
       widthSizeScale, 
       heightSizeScale = 2, 
       showAxes = true} = {}) {
-    performance.mark('Spectrogram.fromFile')
+    const id = audioFile.split('/').at(-1)
+    const performanceMeasure = new PerformanceMeasure(id)
 
-    performance.mark('decodeAudioFromFile')
+    performanceMeasure.mark('Spectrogram.fromFile')
+
+    performanceMeasure.mark('decodeAudioFromFile')
     console.log('audiofile', audioFile)
     const audioData = await AudioData.fromFile(audioFile)
-    performance.measure('decodeAudioFromFile', 'decodeAudioFromFile')
+    performanceMeasure.measure('decodeAudioFromFile', 'decodeAudioFromFile')
 
-    performance.mark('getFrequencyData')
+    performanceMeasure.mark('getFrequencyData')
     const frequencyData = await audioData.getFrequencyData({
       sampleTimeLength      : 1/140,
       fftSize               : 2 ** 9,
       maxFrequency          : 14080,
       smoothingTimeConstant : 0.,
     })
-    performance.measure('getFrequencyData', 'getFrequencyData')
+    performanceMeasure.measure('getFrequencyData', 'getFrequencyData')
 
     // If width is not set but widthSizeScale is, calculate width.
     if (!width && widthSizeScale) {
@@ -170,10 +179,11 @@ class Spectrogram {
         width, 
         height,
         showAxes,
+        performanceMeasure
       })
-    performance.measure('Spectrogram.fromFile', 'Spectrogram.fromFile')
+    performanceMeasure.measure('Spectrogram.fromFile', 'Spectrogram.fromFile')
 
-    logAndClearPerformanceMeasures()
+    performanceMeasure.logAndClearPerformanceMeasures()
     return spectrogram
   }
 
@@ -196,7 +206,7 @@ class Spectrogram {
    * @private
    */ 
   drawSpectrogramData(data, {scaleLogarithmic = true} = {}) {
-    performance.mark('drawSpectrogramData')
+    this.performanceMeasure.mark('drawSpectrogramData')
 
     const width = this.spectroWidth * 1
     const height = this.spectroHeight * 1
@@ -243,8 +253,7 @@ class Spectrogram {
       height)
 
     this.sonogramCtx.putImageData(imageData, 0, 0)
-    performance.measure(
-      'drawSpectrogramData', 'drawSpectrogramData')
+    this.performanceMeasure.measure('drawSpectrogramData')
   }
 
   /**
@@ -697,23 +706,6 @@ class DisplayState {
   getState() {
     return this.displayStates[this.position]
   }
-}
-
-function logAndClearPerformanceMeasures() {
-  performance.getEntriesByType('measure')
-    .sort((a,b) => 
-      (a.startTime - b.startTime) || 
-      // If startTime is equal, show the one that finishes last first.
-      (b.duration - a.duration) )
-    .forEach(m => 
-      console.log(
-        `${m.name.padEnd(20)} ` + 
-        `startTime: ${m.startTime.toFixed(1).padStart(6)}  ` +
-        `duration: ${m.duration.toFixed(1).padStart(6)}` + 
-        // Log a simple timeline.
-        ' ['.padStart(m.startTime / 5) + ''.padEnd(m.duration / 5, '*') + ']'))
-  performance.clearMarks()
-  performance.clearMeasures()
 }
 
 export {Spectrogram}
