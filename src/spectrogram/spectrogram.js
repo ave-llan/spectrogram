@@ -11,11 +11,12 @@ class Spectrogram {
   constructor({
     audioData, 
     frequencyData,
-    container,
+    spectrogramElement,
     width, 
     height = 400,
     showAxes = true,
   }) {
+
     /** @type {!AudioData} */
     this.audioData = audioData,
 
@@ -25,7 +26,7 @@ class Spectrogram {
     this.minFrequencyToRender = 880,
     this.maxFrequencyToRender = 14080
 
-    this.container = container
+    this.container = spectrogramElement
       .append('div')
       .attr('class', 'spectrogramVisualizer')
  
@@ -33,7 +34,7 @@ class Spectrogram {
      * @type {number} width of the Spectrogram visualizer tool. If not set, uses
      *   the max width available to the element.
      */
-    this.width = width || container.node().offsetWidth
+    this.width = width || this.container.node().offsetWidth
 
     /** @type {number} height of the Spectrogram visualizer tool. */
     this.height = height
@@ -100,12 +101,12 @@ class Spectrogram {
     return Spectrogram.fromFile(
       container.attr('src'),
       {
-        container       : containerElement,
-        width           : container.attr('width') || undefined,
-        height          : container.attr('height') || undefined,
-        widthSizeScale  : container.attr('widthSizeScale') || undefined,
-        heightSizeScale : container.attr('heightSizeScale') || undefined,
-        showAxes        : container.attr('showAxes') == 'true',
+        spectrogramElement : containerElement,
+        width              : container.attr('width') || undefined,
+        height             : container.attr('height') || undefined,
+        widthSizeScale     : container.attr('widthSizeScale') || undefined,
+        heightSizeScale    : container.attr('heightSizeScale') || undefined,
+        showAxes           : container.attr('showAxes') == 'true',
       }
     )
   }
@@ -114,12 +115,12 @@ class Spectrogram {
    * New Spectrogram given an audioFile path. 
    * @param {string} audioFile path to audio file
    * @param {{
-   *     container: (!Element|undefined), 
+   *     spectrogramElement: (!Element|undefined), 
    *     width: (number|undefined),
    *     height: (number|undefined),
    *     sizeScale: (number|undefined),
    *     }=} options
-   *         container The selection in which to put the spectrogram.
+   *         spectrogramElement The element in which to put the spectrogram.
    *             If not defined, uses the body as a container. 
    *         width The width in pixels of the spectrogram, defaults to the 
    *             number of samples in the frequency data.
@@ -133,7 +134,7 @@ class Spectrogram {
    */
   static async fromFile(audioFile, 
     {
-      container, 
+      spectrogramElement, 
       width, 
       height, 
       widthSizeScale, 
@@ -165,7 +166,7 @@ class Spectrogram {
       {
         audioData, 
         frequencyData,
-        container: d3Selection.select(container || 'body'),
+        spectrogramElement: d3Selection.select(spectrogramElement || 'body'),
         width, 
         height,
         showAxes,
