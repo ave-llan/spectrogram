@@ -402,7 +402,7 @@ class SpectroPlaybackController {
           ${spectroMargin.top - this.spectroPadding - iconSize})`
       )
 
-    this.playbackIcon.append('image')
+    this.playbackIconImage = this.playbackIcon.append('image')
       .attr('id', 'playback-icon')
       .attr('width', iconSize)
       .attr('height', iconSize)
@@ -509,7 +509,7 @@ class SpectroPlaybackController {
    *  @param {boolean} isBelingPlayedBack
    */
   updatePlaybackButtonAndLineAnimation(isBeingPlayedBack) {
-    d3Selection.select('#playback-icon')
+    this.playbackIconImage
       .attr('xlink:href', isBeingPlayedBack ? stopIcon : playIcon)
 
     this.playbackLine
