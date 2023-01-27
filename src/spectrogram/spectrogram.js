@@ -711,7 +711,7 @@ function logAndClearPerformanceMeasures() {
         `startTime: ${m.startTime.toFixed(1).padStart(6)}  ` +
         `duration: ${m.duration.toFixed(1).padStart(6)}` + 
         // Log a simple timeline.
-        ' ['.padStart(m.startTime / 5).padEnd(m.duration / 5, '*') + ']'))
+        ' ['.padStart(m.startTime / 5) + ''.padEnd(m.duration / 5, '*') + ']'))
   performance.clearMarks()
   performance.clearMeasures()
 }
