@@ -8,11 +8,31 @@
   body {
     background-color: lightgray;
   }
+
+  .demo {
+    margin-bottom:30px;
+    background-color:white;
+    min-height: 328px;
+  }
 </style>
 <body>
-  <div style="background-color:white; height:328px;">
+  <div class="demo">
     <spectrogram 
       src="./audio/blackheaded-grosbeak-song.wav"
+      showAxes="false">
+    </spectrogram>
+  </div>
+
+  <div class="demo">
+    <spectrogram 
+      src="./audio/solitaire.wav"
+      showAxes="false">
+    </spectrogram>
+  </div>
+
+  <div class="demo">
+    <spectrogram 
+      src="./audio/crossbills-raven.wav"
       showAxes="false">
     </spectrogram>
   </div>
