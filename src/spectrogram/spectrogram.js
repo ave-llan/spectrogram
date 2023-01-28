@@ -4,6 +4,7 @@ import * as d3Selection from 'd3-selection'
 import * as d3Scale from 'd3-scale'
 import {AudioData} from './audio-data.js'
 import {PerformanceMeasure} from './performance-measure.js'
+import {PlaybackOrchestrator} from './playback-orchestrator.js'
 import {steelBlue} from '../resources/color.js'
 import playIcon from '../resources/play_icon.svg'
 import stopIcon from '../resources/stop_icon.svg'
@@ -86,7 +87,9 @@ class Spectrogram {
       .attr('height', this.height)
 
     this.drawSpectrogram(this.displayState.getState())
-    new SpectroPlaybackController({
+    
+    /** @type {!SpectroPlaybackController */
+    this.playbackController = new SpectroPlaybackController({
       audioData      : this.audioData,
       spectrogramDiv : this.container,
       spectorgramSvg : this.svg, 
@@ -97,11 +100,24 @@ class Spectrogram {
   }
 
   /**
+   * Creates a spectrogram for each Element, configured using attributes defined
+   * on the elements. Manages playback controls among all elements.
+   * @param {!Array<!Element>} containerElements
+   * @return {!PlaybackOrchestrator}
+   */
+  static async forElements(containerElements) {
+    return new PlaybackOrchestrator(
+      await Promise.all(containerElements.map(Spectrogram.forElement))
+    )
+  }
+
+  /**
    * Creates a spectrogram for an Element, configured using attributes defined
    * on that element.
    * @param {!Element} containerElement
+   * @return {!Promise<!Spectrogram>}
    */
-  static forElement(containerElement) {
+  static async forElement(containerElement) {
     const container = d3Selection.select(containerElement)
 
     return Spectrogram.fromFile(
@@ -136,7 +152,7 @@ class Spectrogram {
    *             amount.
    *         showAxes True if axes should be rendered to show time and
    *             frequency values.
-   * @return {!Spectrogram}
+   * @return {!Promise<!Spectrogram>}
    */
   static async fromFile(audioFile, 
     {
@@ -340,6 +356,9 @@ class SpectroPlaybackController {
     this.audioData = audioData
     this.audioContext = new AudioContext()
 
+    /** @type {number} Last timestamp a user interacted with spectrogram. */
+    this.lastUserInteractionTimestamp = 0
+
     /** @type {number} padding around spectrogram */
     this.spectroPadding = 5
     this.width = width,
@@ -412,15 +431,11 @@ class SpectroPlaybackController {
     // Add event listeners for playback.
     this.playbackIcon
       .on('click', (event) => {
+        this.markInteractionTime()
+
         event.stopPropagation()
         this.togglePlayback()
       })
-    document.addEventListener('keydown', ({code}) => {
-      if (code == 'Space') {
-        this.togglePlayback()
-      }
-    })
-
 
     /** @const {!Function} D3 brush UI controller for selecting a
      *      two-dimensional region by clicking and dragging the mouse.
@@ -435,6 +450,8 @@ class SpectroPlaybackController {
     // not drag (and we want to set playbackSelectionLine)
     this.brush
       .on('start', ({selection}) => {
+        this.markInteractionTime()
+
         const playbackWasActive = this.playbackActive
         if (playbackWasActive) {
           // Stop current playback.
@@ -464,6 +481,8 @@ class SpectroPlaybackController {
     // playback selection line.
     this.brush
       .on('end', ({selection}) => {
+        this.markInteractionTime()
+
         if (selection) {
           // Capture selection.
           [[this.selectionStart.x , 
@@ -564,6 +583,28 @@ class SpectroPlaybackController {
     this.playbackStartedAt = this.audioContext.currentTime
 
     return source
+  }
+
+  /** @return {boolean} True if playback is active. */ 
+  isPlaybackActive() {
+    return this.playbackActive
+  }
+
+  /** Stops any active playback. */ 
+  stopPlayback() {
+    if (this.playbackActive) {
+      this.togglePlayback()
+    }
+  }
+
+  /** */
+  markInteractionTime() {
+    this.lastUserInteractionTimestamp = Date.now()
+  }
+
+  /** {number} Timestamp when the user last interacted with this spectrogram. */
+  getLastInteractionTime() {
+    return this.lastUserInteractionTimestamp
   }
 
   togglePlayback() {
