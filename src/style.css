@@ -12,5 +12,9 @@
 }
 
 .axis text {
-  fill: grey;
+  fill: #696969;
+}
+
+.axis {
+  color: #dcdcdc;
 }
