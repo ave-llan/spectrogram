@@ -17,6 +17,8 @@ class Spectrogram {
     width, 
     height = 400,
     showAxes = true,
+    minFrequencyToRender = 440,
+    maxFrequencyToRender = 10000,
     performanceMeasure
   }) {
 
@@ -26,8 +28,10 @@ class Spectrogram {
     /**  @type {!Array<!FrequencyData>} */
     this.frequencyData = frequencyData,
 
-    this.minFrequencyToRender = 880,
-    this.maxFrequencyToRender = 14080
+    /** @type {number} Min frequency to display, in hertz. */
+    this.minFrequencyToRender = minFrequencyToRender,
+    /** @type {number} Max frequency to display, in hertz. */
+    this.maxFrequencyToRender = maxFrequencyToRender
 
     this.container = spectrogramElement
       .append('div')
@@ -123,12 +127,16 @@ class Spectrogram {
     return Spectrogram.fromFile(
       container.attr('src'),
       {
-        spectrogramElement : containerElement,
-        width              : container.attr('width') || undefined,
-        height             : container.attr('height') || undefined,
-        widthSizeScale     : container.attr('widthSizeScale') || undefined,
-        heightSizeScale    : container.attr('heightSizeScale') || undefined,
-        showAxes           : container.attr('showAxes') == 'true',
+        spectrogramElement   : containerElement,
+        width                : container.attr('width') || undefined,
+        height               : container.attr('height') || undefined,
+        widthSizeScale       : container.attr('widthSizeScale') || undefined,
+        heightSizeScale      : container.attr('heightSizeScale') || undefined,
+        showAxes             : container.attr('showAxes') == 'true',
+        minFrequencyToRender : container.attr('minFrequencyToRender') 
+          || undefined,
+        maxFrequencyToRender: container.attr('maxFrequencyToRender') 
+          || undefined,
       }
     )
   }
@@ -141,6 +149,8 @@ class Spectrogram {
    *     width: (number|undefined),
    *     height: (number|undefined),
    *     sizeScale: (number|undefined),
+   *     minFrequencyToRender = (number|undefined),
+   *     maxFrequencyToRender = (number|undefined),
    *     }=} options
    *         spectrogramElement The element in which to put the spectrogram.
    *             If not defined, uses the body as a container. 
@@ -152,6 +162,8 @@ class Spectrogram {
    *             amount.
    *         showAxes True if axes should be rendered to show time and
    *             frequency values.
+   *         minFrequencyToRender Min frequency to display, in herz.
+   *         maxFrequencyToRender Max frequency to display, in herz.
    * @return {!Promise<!Spectrogram>}
    */
   static async fromFile(audioFile, 
@@ -161,7 +173,10 @@ class Spectrogram {
       height, 
       widthSizeScale, 
       heightSizeScale = 2, 
-      showAxes = true} = {}) {
+      showAxes = true,
+      minFrequencyToRender = 440,
+      maxFrequencyToRender = 10000,
+    } = {}) {
     const id = audioFile.split('/').at(-1)
     const performanceMeasure = new PerformanceMeasure(id)
 
@@ -195,7 +210,9 @@ class Spectrogram {
         width, 
         height,
         showAxes,
-        performanceMeasure
+        performanceMeasure,
+        minFrequencyToRender,
+        maxFrequencyToRender,
       })
     performanceMeasure.measure('Spectrogram.fromFile', 'Spectrogram.fromFile')
 
