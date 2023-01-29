@@ -53,7 +53,13 @@ class Spectrogram {
     this.performanceMeasure = performanceMeasure || 
       new PerformanceMeasure(`${Math.random()}`)
 
-    this.spectroMargin = {top: 40, right: 20, bottom: 40, left: 40}
+    this.spectroMargin = {
+      top    : 40, 
+      right  : this.showAxes ? 20 : 0, 
+      bottom : this.showAxes ? 40 : 0, 
+      left   : this.showAxes ? 40 : 0,
+    }
+    
     this.spectroWidth = this.width 
       - this.spectroMargin.left - this.spectroMargin.right
     this.spectroHeight = this.height 
