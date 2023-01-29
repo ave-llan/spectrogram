@@ -317,10 +317,9 @@ class Spectrogram {
       .append('g')
       .append('text')
       // Position axis label with enough room below axis ticks
-      .attr('transform', `translate(${this.spectroWidth},${30})`)
-      // .attr('fill', 'black')
-      .attr('text-anchor', 'end')
-      .text('seconds  →')
+      // .attr('transform', `translate(${this.spectroWidth},${30})`)
+      // .attr('text-anchor', 'end')
+      // .text('sec →')
 
     // Add y axis (frequency scale)
     const frequencyAxis = useMusicNotation ? 
