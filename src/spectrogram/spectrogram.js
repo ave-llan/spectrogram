@@ -688,7 +688,7 @@ function frequencyScaleAxis({
       .range([spectroHeight, 0])
 
   const frequencyAxis = d3Axis.axisLeft(scale)
-    // .ticks(10)
+    .ticks(5)
     // convert to kHz
     .tickFormat(hz => `${hz / 1000}`)
 
