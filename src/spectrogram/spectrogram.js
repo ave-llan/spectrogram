@@ -304,8 +304,9 @@ class Spectrogram {
     const timeScale = d3Scale.scaleLinear()
       .domain([0, this.frequencyData.duration])
       .range([0, this.spectroWidth])
+    const TARGET_TICK_SPACE = 150
     const timeAxis = d3Axis.axisBottom(timeScale)
-      .ticks(Math.floor(this.frequencyData.duration))
+      .ticks(Math.ceil(this.spectroWidth / TARGET_TICK_SPACE))
     this.svg.append('g')
       .attr('class', 'xAxis axis')
       .attr('transform', `translate(
