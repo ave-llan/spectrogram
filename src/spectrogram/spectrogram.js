@@ -17,6 +17,7 @@ class Spectrogram {
     width, 
     height = 400,
     showAxes = true,
+    scrolling = true,
     minFrequencyToRender = 440,
     maxFrequencyToRender = 10000,
     performanceMeasure
@@ -59,11 +60,31 @@ class Spectrogram {
       bottom : this.showAxes ? 40 : 0, 
       left   : this.showAxes ? 40 : 0,
     }
-    
-    this.spectroWidth = this.width 
-      - this.spectroMargin.left - this.spectroMargin.right
+
+    /** The visible width of the spectrogram display. */
+    this.spectroDisplayWidth = this.width 
+        - this.spectroMargin.left - this.spectroMargin.right
+
+    /**
+     * @type {number} Width of a second in spectrogram display.
+     */
+    this.pixelsPerSecond = scrolling 
+      ? 60 
+      : this.spectroDisplayWidth / this.frequencyData.duration
+ 
+    /** The full width of the spectrogram display if fully rendered. */
+    this.spectroFullWidth = scrolling 
+      ? Math.round(this.pixelsPerSecond * this.frequencyData.duration)
+      : this.spectroDisplayWidth
+    /** The rendered height of the spectrogram display. */
     this.spectroHeight = this.height 
       - this.spectroMargin.top - this.spectroMargin.bottom
+
+    // Left-most visible time on the tool.
+    this.spectroDisplayStartSeconds = 0
+    // Right-most visible time on the tool.
+    this.spectroDisplayEndSeconds = this.spectroDisplayStartSeconds + 
+      (this.spectroDisplayWidth / this.pixelsPerSecond)
 
     this.displayState = new DisplayState()
 
@@ -74,17 +95,17 @@ class Spectrogram {
       .style('position', 'relative')
 
     /** @type {!d3Selection.Selection} A canvas for drawing spectrogram data. */
-    this.sonogramCanvas = this.container
+    this.spectrogramCanvas = this.container
       .append('canvas')
       .attr('class', 'spectrogram')
-      .attr('width', this.spectroWidth)
+      .attr('width', this.spectroFullWidth)
       .attr('height', this.spectroHeight)
       .style('position', 'absolute')
       .style('left', `${this.spectroMargin.left}px`)
       .style('top', `${this.spectroMargin.top}px`)
 
-    /** @type {!CanvasRenderingContext2D} canvas context for sonogram. */ 
-    this.sonogramCtx = this.sonogramCanvas
+    /** @type {!CanvasRenderingContext2D} canvas context for spectrogram. */ 
+    this.spectrogramCtx = this.spectrogramCanvas
       .node()
       .getContext('2d')
 
@@ -139,6 +160,7 @@ class Spectrogram {
         widthSizeScale       : container.attr('widthSizeScale') || undefined,
         heightSizeScale      : container.attr('heightSizeScale') || undefined,
         showAxes             : container.attr('showAxes') == 'true',
+        scrolling            : container.attr('scrolling') == 'true',
         minFrequencyToRender : container.attr('minFrequencyToRender') 
           || undefined,
         maxFrequencyToRender: container.attr('maxFrequencyToRender') 
@@ -155,6 +177,8 @@ class Spectrogram {
    *     width: (number|undefined),
    *     height: (number|undefined),
    *     sizeScale: (number|undefined),
+   *     showAxes: (boolean|undefined),
+   *     scrolling: (boolean|undefined),
    *     minFrequencyToRender = (number|undefined),
    *     maxFrequencyToRender = (number|undefined),
    *     }=} options
@@ -168,6 +192,7 @@ class Spectrogram {
    *             amount.
    *         showAxes True if axes should be rendered to show time and
    *             frequency values.
+   *         scrolling True if spectrogram should scroll during playback.
    *         minFrequencyToRender Min frequency to display, in herz.
    *         maxFrequencyToRender Max frequency to display, in herz.
    * @return {!Promise<!Spectrogram>}
@@ -180,6 +205,7 @@ class Spectrogram {
       widthSizeScale, 
       heightSizeScale = 2, 
       showAxes = true,
+      scrolling = true,
       minFrequencyToRender = 440,
       maxFrequencyToRender = 10000,
     } = {}) {
@@ -216,6 +242,7 @@ class Spectrogram {
         width, 
         height,
         showAxes,
+        scrolling,
         performanceMeasure,
         minFrequencyToRender,
         maxFrequencyToRender,
@@ -237,7 +264,7 @@ class Spectrogram {
   }
 
   /** 
-   * Draws the sonogram.
+   * Draws the spectrogram.
    * @param {!Array<!Uint8Array>} an array of frequency samples, each 
    *     sample should be a normalized array of decibel values between 0 and 
    *     255. The frequencies are spread linearly from 0 to 1/2 of the sample
@@ -247,7 +274,7 @@ class Spectrogram {
   drawSpectrogramData(data, {scaleLogarithmic = true} = {}) {
     this.performanceMeasure.mark('drawSpectrogramData')
 
-    const width = this.spectroWidth * 1
+    const width = this.spectroFullWidth * 1
     const height = this.spectroHeight * 1
 
     const byteCount = 4 * width * height
@@ -291,7 +318,7 @@ class Spectrogram {
       width, 
       height)
 
-    this.sonogramCtx.putImageData(imageData, 0, 0)
+    this.spectrogramCtx.putImageData(imageData, 0, 0)
     this.performanceMeasure.measure('drawSpectrogramData')
   }
 
@@ -308,11 +335,11 @@ class Spectrogram {
 
     // Add x axis (time scale)
     const timeScale = d3Scale.scaleLinear()
-      .domain([0, this.frequencyData.duration])
-      .range([0, this.spectroWidth])
+      .domain([this.spectroDisplayStartSeconds, this.spectroDisplayEndSeconds])
+      .range([0, this.spectroDisplayWidth])
     const TARGET_TICK_SPACE = 150
     const timeAxis = d3Axis.axisBottom(timeScale)
-      .ticks(Math.ceil(this.spectroWidth / TARGET_TICK_SPACE))
+      .ticks(Math.ceil(this.spectroDisplayWidth / TARGET_TICK_SPACE))
     this.svg.append('g')
       .attr('class', 'xAxis axis')
       .attr('transform', `translate(
@@ -323,7 +350,7 @@ class Spectrogram {
       .append('g')
       .append('text')
       // Position axis label with enough room below axis ticks
-      // .attr('transform', `translate(${this.spectroWidth},${30})`)
+      // .attr('transform', `translate(${this.spectroDisplayWidth},${30})`)
       // .attr('text-anchor', 'end')
       // .text('sec →')
 
@@ -387,7 +414,7 @@ class SpectroPlaybackController {
     this.width = width,
     this.height = height,
     this.spectroMargin = spectroMargin
-    this.spectroWidth = width
+    this.spectroDisplayWidth = width
       - this.spectroMargin.left 
       - this.spectroMargin.right
     this.spectroHeight = height - spectroMargin.top - spectroMargin.bottom
@@ -402,14 +429,14 @@ class SpectroPlaybackController {
     this.playbackSelectionEnd =  this.audioData.duration
     // Selection area in pixels.
     this.selectionStart = {x: 0, y: 0}
-    this.selectionEnd = {x: this.spectroWidth, y: this.spectroHeight}
+    this.selectionEnd = {x: this.spectroDisplayWidth, y: this.spectroHeight}
 
     // Create a new SVG overlay for selection UI. 
     this.selectionSvg = spectrogramDiv
       .append('svg')
       .attr('class', 'selectionSvg')
       .style('position', 'absolute')
-      .attr('width', this.spectroWidth)
+      .attr('width', this.spectroDisplayWidth)
       .attr('height', this.spectroHeight)
       .style('top', this.spectroMargin.top)
       .style('left', this.spectroMargin.left)
@@ -492,7 +519,7 @@ class SpectroPlaybackController {
         // a more specific selection.
         this.selectionStart.x = x1
         this.selectionStart.y = 0
-        this.selectionEnd.x = this.spectroWidth
+        this.selectionEnd.x = this.spectroDisplayWidth
         this.selectionEnd.y = this.spectroHeight
         this.setPlaybackTimerangeFromSelection(
           this.selectionStart.x, 
@@ -537,7 +564,7 @@ class SpectroPlaybackController {
    */
   clickIsWithinSpectrogram(x, y) {
     if (x < this.spectroMargin.left || 
-        x - this.spectroMargin.left > this.spectroWidth ||
+        x - this.spectroMargin.left > this.spectroDisplayWidth ||
         y < this.spectroMargin.top ||
         y - this.spectroMargin.top > this.spectroHeight) {
       return false
@@ -571,7 +598,7 @@ class SpectroPlaybackController {
     const timePosition = this.audioContext.currentTime 
       - (this.playbackStartedAt - this.playbackSelectionStart)
     const percentComplete = timePosition / this.audioData.duration 
-    const xPosition = this.spectroWidth * percentComplete
+    const xPosition = this.spectroDisplayWidth * percentComplete
 
     this.playbackLine
       .attr('x1', xPosition)
@@ -671,7 +698,7 @@ class SpectroPlaybackController {
    * @return {number} time position in seconds
    */ 
   getTimePositionFromX(xPosition) {
-    const xPercentage = xPosition / this.spectroWidth
+    const xPercentage = xPosition / this.spectroDisplayWidth
     return this.audioData.duration * xPercentage
   }
 }
