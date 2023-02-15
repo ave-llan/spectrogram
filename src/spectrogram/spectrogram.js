@@ -126,8 +126,8 @@ class Spectrogram {
       height                     : this.height, 
       spectroMargin              : this.spectroMargin,
       spectroDisplayStartSeconds : this.spectroDisplayStartSeconds,
-      spectroDisplayEndSeconds   : this.spectroDisplayEndSeconds,
-      pixelsPerSecond            : this.pixelsPerSecond
+      pixelsPerSecond            : this.pixelsPerSecond,
+      spectrogramCanvas          : this.spectrogramCanvas
     })
   }
 
@@ -403,8 +403,8 @@ class SpectroPlaybackController {
     width, 
     spectroMargin, 
     spectroDisplayStartSeconds,
-    spectroDisplayEndSeconds,
     pixelsPerSecond,
+    spectrogramCanvas,
     iconSize = 30}) {
 
     this.audioData = audioData
@@ -423,17 +423,18 @@ class SpectroPlaybackController {
       - this.spectroMargin.right
     this.spectroHeight = height - spectroMargin.top - spectroMargin.bottom
 
-    /** @type {number} Left-most visible time on the tool. */
-    this.spectroDisplayStartSeconds = spectroDisplayStartSeconds
-    /** @type {number} Right-most visible time on the tool. */
-    this.spectroDisplayEndSeconds = spectroDisplayEndSeconds
     /** @type {number} Width of a second in spectrogram display. */
     this.pixelsPerSecond = pixelsPerSecond 
+    /** @type {number} Left-most visible time on the tool. */
+    this.spectroDisplayStartSeconds = spectroDisplayStartSeconds
 
     this.playbackActive = false
     this.playbacknode,
     this.playbackLineAnimationId,
-    this.playbackStartedAt
+    /** @type {number} World time when playback started. */
+    this.playbackStartedAt,
+    /** @type {number} Time in audio clip where playback started. */
+    this.timeInAudioClipWherePlaybackStarted
 
     /** @type {number} When (in seconds) to start playback */
     this.playbackSelectionStart = 0
@@ -441,6 +442,8 @@ class SpectroPlaybackController {
     // Selection area in pixels.
     this.selectionStart = {x: 0, y: 0}
     this.selectionEnd = {x: this.spectroDisplayWidth, y: this.spectroHeight}
+
+    this.spectrogramCanvas = spectrogramCanvas
 
     // Create a new SVG overlay for selection UI. 
     this.selectionSvg = spectrogramDiv
@@ -605,10 +608,31 @@ class SpectroPlaybackController {
   animatePlaybackLine() {
     // Draw a vertical line to show current position of playback
     const timePosition = this.audioContext.currentTime 
-      - (this.playbackStartedAt - this.playbackSelectionStart)
+      - (this.playbackStartedAt - this.timeInAudioClipWherePlaybackStarted)
+
+    // Check if we have reached the end of visible area and need to update
+    // display.
+    if (timePosition > this.getDisplayEndSeconds()) {
+      this.spectroDisplayStartSeconds = this.getDisplayEndSeconds()
+
+      // Hide previously selection playback line if it was visible, as the
+      // user is making a new selection.
+      this.playbackSelectionLine
+        .attr('opacity', 0)
+
+      // For now, set playback selection start to the new visible beginning.
+      this.setPlaybackTimerangeFromSelectionPoint(0)
+
+      this.spectrogramCanvas.style(
+        'left', 
+        `${this.spectroMargin.left - 
+          this.spectroDisplayStartSeconds * this.pixelsPerSecond}px`)
+    }
+
+
     const percentVisibleComplete = 
       (timePosition - this.spectroDisplayStartSeconds) / 
-      (this.spectroDisplayEndSeconds - this.spectroDisplayStartSeconds)
+      this.getVisibleTimeDuration()
     const xPosition = this.spectroDisplayWidth * percentVisibleComplete
 
     this.playbackLine
@@ -642,6 +666,7 @@ class SpectroPlaybackController {
     source.start()
 
     this.playbackStartedAt = this.audioContext.currentTime
+    this.timeInAudioClipWherePlaybackStarted = this.playbackSelectionStart
 
     return source
   }
@@ -696,7 +721,7 @@ class SpectroPlaybackController {
   }
 
   /**
-   * Updates playback seleciton start (in seconds) based on UI selection
+   * Updates playback selection start (in seconds) based on UI selection
    * range, and sets end to end of audio.
    * @param {number} startX
    */
@@ -722,10 +747,23 @@ class SpectroPlaybackController {
    */ 
   getTimePositionFromX(xPosition) {
     const xPercentage = xPosition / this.spectroDisplayWidth
-    const visibleTimeDuration = this.spectroDisplayEndSeconds - 
-      this.spectroDisplayStartSeconds
 
-    return this.spectroDisplayStartSeconds +  visibleTimeDuration * xPercentage
+    return this.spectroDisplayStartSeconds + 
+      this.getVisibleTimeDuration() * xPercentage
+  }
+
+  /**
+   * @return {number} Duration in seconds of visible spectrogram.
+   */
+  getVisibleTimeDuration() {
+    return this.spectroDisplayWidth / this.pixelsPerSecond
+  }
+
+  /**
+   * @return {number} Last visible displayed part of spectrogram, in seconds.
+   */
+  getDisplayEndSeconds() {
+    return this.spectroDisplayStartSeconds + this.getVisibleTimeDuration()
   }
 }
 
