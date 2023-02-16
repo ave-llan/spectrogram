@@ -117,18 +117,162 @@ class Spectrogram {
 
     this.drawSpectrogram(this.displayState.getState())
     
-    /** @type {!SpectroPlaybackController */
-    this.playbackController = new SpectroPlaybackController({
-      audioData                  : this.audioData,
-      spectrogramDiv             : this.container,
-      spectorgramSvg             : this.svg, 
-      width                      : this.width, 
-      height                     : this.height, 
-      spectroMargin              : this.spectroMargin,
-      spectroDisplayStartSeconds : this.spectroDisplayStartSeconds,
-      pixelsPerSecond            : this.pixelsPerSecond,
-      spectrogramCanvas          : this.spectrogramCanvas
-    })
+
+
+    // PLAYBACK and ANIMATION.
+    this.audioContext = new AudioContext()
+    // Size of icons like the play button.
+    this.iconSize = 30
+    /** @type {number} padding around spectrogram */
+    this.spectroPadding = 5
+
+    /** @type {number} Last timestamp a user interacted with spectrogram. */
+    this.lastUserInteractionTimestamp = 0
+
+
+    this.spectroDisplayWidth = this.width
+      - this.spectroMargin.left 
+      - this.spectroMargin.right
+    this.spectroHeight = this.height 
+      - this.spectroMargin.top 
+      - this.spectroMargin.bottom
+
+    this.playbackActive = false
+    this.playbacknode,
+    this.playbackLineAnimationId,
+    /** @type {number} World time when playback started. */
+    this.playbackStartedAt,
+    /** @type {number} Time in audio clip where playback started. */
+    this.timeInAudioClipWherePlaybackStarted
+
+    /** @type {number} When (in seconds) to start playback */
+    this.playbackSelectionStart = 0
+    this.playbackSelectionEnd =  this.audioData.duration
+    // Selection area in pixels.
+    this.selectionStart = {x: 0, y: 0}
+    this.selectionEnd = {x: this.spectroDisplayWidth, y: this.spectroHeight}
+
+    // Create a new SVG overlay for selection UI. 
+    this.selectionSvg = this.container
+      .append('svg')
+      .attr('class', 'selectionSvg')
+      .style('position', 'absolute')
+      .attr('width', this.spectroDisplayWidth)
+      .attr('height', this.spectroHeight)
+      .style('top', this.spectroMargin.top)
+      .style('left', this.spectroMargin.left)
+
+    this.playbackSelectionLine = this.selectionSvg
+      .append('g')
+      .attr('class', 'playbackSelectionLine')
+      .append('line')
+      .attr('x1', 0)
+      .attr('x2', 0)
+      .attr('y1', 0)
+      .attr('y2', this.spectroHeight)
+      .attr('stroke', 'grey')
+      .attr('opacity', 0)
+
+    this.playbackLine = this.selectionSvg
+      .append('g')
+      .attr('class', 'playbackPositionLine')
+      .append('line')
+      .attr('x1', 0)
+      .attr('x2', 0)
+      .attr('y1', 0)
+      .attr('y2', this.spectroHeight)
+      .attr('stroke', 'black')
+      .attr('opacity', 0)
+
+    this.playbackIcon = this.svg.append('g')
+      .attr('class', 'play-icon button')
+      .attr('transform', 
+        `translate(
+          ${this.width - (this.iconSize + this.spectroMargin.right)},
+          ${this.spectroMargin.top - this.spectroPadding - this.iconSize})`
+      )
+
+    this.playbackIconImage = this.playbackIcon.append('image')
+      .attr('id', 'playback-icon')
+      .attr('width', this.iconSize)
+      .attr('height', this.iconSize)
+      .attr('xlink:href', playIcon)
+      .attr('opacity', 0.25)
+
+    // Add event listeners for playback.
+    this.playbackIcon
+      .on('click', (event) => {
+        this.markInteractionTime()
+
+        event.stopPropagation()
+        this.togglePlayback()
+      })
+
+    /** @const {!Function} D3 brush UI controller for selecting a
+     *      two-dimensional region by clicking and dragging the mouse.
+     */
+    this.playbackAreaSelectionBrush = d3Brush.brush()
+
+    // Activate brush on selection svg.
+    this.selectionSvg
+      .call(this.playbackAreaSelectionBrush)
+
+    // At start of brush, capture beginning x1 position in case the user does
+    // not drag (and we want to set playbackSelectionLine)
+    this.playbackAreaSelectionBrush
+      .on('start', ({selection}) => {
+        this.markInteractionTime()
+
+        const playbackWasActive = this.playbackActive
+        if (playbackWasActive) {
+          // Stop current playback.
+          this.togglePlayback()
+        }
+        
+        // Hide previously selection playback line if it was visible, as the
+        // user is making a new selection.
+        this.playbackSelectionLine
+          .attr('opacity', 0)
+
+        // Selection contains [[x1, y1], [x2, y2]] but we only need x1.
+        const [[x1]] = selection 
+        // Reset selection from x1 to end in case user does not drag to make
+        // a more specific selection.
+        this.selectionStart.x = x1
+        this.selectionStart.y = 0
+        this.selectionEnd.x = this.spectroDisplayWidth
+        this.selectionEnd.y = this.spectroHeight
+        this.setPlaybackTimerangeFromSelectionPoint(this.selectionStart.x)
+      })
+
+    // Add event listern for playbackSelectionLine based on end of brush event.
+    // If there is no selection at the end, instead set the time based 
+    // playback selection line.
+    this.playbackAreaSelectionBrush
+      .on('end', ({selection}) => {
+        this.markInteractionTime()
+
+        if (selection) {
+          // Capture selection.
+          [[this.selectionStart.x , 
+            this.selectionStart.y], 
+           [this.selectionEnd.x, 
+            this.selectionEnd.y]] = selection 
+
+          this.setPlaybackTimerangeFromSelectionRange(
+            this.selectionStart.x, 
+            this.selectionEnd.x)
+        } else {
+          // No selection, so activate playbackSelectionLine
+          this.setPlaybackSelectionLine(this.selectionStart.x)
+        }
+      })
+      
+    this.playbackAreaSelectionBrush
+      .on('brush', (event) => {
+        console.log('brush: ', event.selection)
+        // TODO: Show selection time points and frequency points while brushing.
+      })
   }
 
   /**
@@ -388,184 +532,6 @@ class Spectrogram {
       .text(`↑ ${useMusicNotation ? '♫' : 'kHz'}`)
 
     performance.measure('drawSpectrogramAxis', 'drawSpectrogramAxis')
-  }
-}
-
-/**
- *  Adds playback functionality to spectrogram.
- */
-class SpectroPlaybackController {
-  constructor({
-    audioData, 
-    spectrogramDiv,
-    spectorgramSvg, 
-    height, 
-    width, 
-    spectroMargin, 
-    spectroDisplayStartSeconds,
-    pixelsPerSecond,
-    spectrogramCanvas,
-    iconSize = 30}) {
-
-    this.audioData = audioData
-    this.audioContext = new AudioContext()
-
-    /** @type {number} Last timestamp a user interacted with spectrogram. */
-    this.lastUserInteractionTimestamp = 0
-
-    /** @type {number} padding around spectrogram */
-    this.spectroPadding = 5
-    this.width = width,
-    this.height = height,
-    this.spectroMargin = spectroMargin
-    this.spectroDisplayWidth = width
-      - this.spectroMargin.left 
-      - this.spectroMargin.right
-    this.spectroHeight = height - spectroMargin.top - spectroMargin.bottom
-
-    /** @type {number} Width of a second in spectrogram display. */
-    this.pixelsPerSecond = pixelsPerSecond 
-    /** @type {number} Left-most visible time on the tool. */
-    this.spectroDisplayStartSeconds = spectroDisplayStartSeconds
-
-    this.playbackActive = false
-    this.playbacknode,
-    this.playbackLineAnimationId,
-    /** @type {number} World time when playback started. */
-    this.playbackStartedAt,
-    /** @type {number} Time in audio clip where playback started. */
-    this.timeInAudioClipWherePlaybackStarted
-
-    /** @type {number} When (in seconds) to start playback */
-    this.playbackSelectionStart = 0
-    this.playbackSelectionEnd =  this.audioData.duration
-    // Selection area in pixels.
-    this.selectionStart = {x: 0, y: 0}
-    this.selectionEnd = {x: this.spectroDisplayWidth, y: this.spectroHeight}
-
-    this.spectrogramCanvas = spectrogramCanvas
-
-    // Create a new SVG overlay for selection UI. 
-    this.selectionSvg = spectrogramDiv
-      .append('svg')
-      .attr('class', 'selectionSvg')
-      .style('position', 'absolute')
-      .attr('width', this.spectroDisplayWidth)
-      .attr('height', this.spectroHeight)
-      .style('top', this.spectroMargin.top)
-      .style('left', this.spectroMargin.left)
-
-    this.playbackSelectionLine = this.selectionSvg
-      .append('g')
-      .attr('class', 'playbackSelectionLine')
-      .append('line')
-      .attr('x1', 0)
-      .attr('x2', 0)
-      .attr('y1', 0)
-      .attr('y2', this.spectroHeight)
-      .attr('stroke', 'grey')
-      .attr('opacity', 0)
-
-    this.playbackLine = this.selectionSvg
-      .append('g')
-      .attr('class', 'playbackPositionLine')
-      .append('line')
-      .attr('x1', 0)
-      .attr('x2', 0)
-      .attr('y1', 0)
-      .attr('y2', this.spectroHeight)
-      .attr('stroke', 'black')
-      .attr('opacity', 0)
-
-    this.playbackIcon = spectorgramSvg.append('g')
-      .attr('class', 'play-icon button')
-      .attr('transform', 
-        `translate(
-          ${this.width - (iconSize + spectroMargin.right)},
-          ${spectroMargin.top - this.spectroPadding - iconSize})`
-      )
-
-    this.playbackIconImage = this.playbackIcon.append('image')
-      .attr('id', 'playback-icon')
-      .attr('width', iconSize)
-      .attr('height', iconSize)
-      .attr('xlink:href', playIcon)
-      .attr('opacity', 0.25)
-
-    // Add event listeners for playback.
-    this.playbackIcon
-      .on('click', (event) => {
-        this.markInteractionTime()
-
-        event.stopPropagation()
-        this.togglePlayback()
-      })
-
-    /** @const {!Function} D3 brush UI controller for selecting a
-     *      two-dimensional region by clicking and dragging the mouse.
-     */
-    this.brush = d3Brush.brush()
-
-    // Activate brush on selection svg.
-    this.selectionSvg
-      .call(this.brush)
-
-    // At start of brush, capture beginning x1 position in case the user does
-    // not drag (and we want to set playbackSelectionLine)
-    this.brush
-      .on('start', ({selection}) => {
-        this.markInteractionTime()
-
-        const playbackWasActive = this.playbackActive
-        if (playbackWasActive) {
-          // Stop current playback.
-          this.togglePlayback()
-        }
-        
-        // Hide previously selection playback line if it was visible, as the
-        // user is making a new selection.
-        this.playbackSelectionLine
-          .attr('opacity', 0)
-
-        // Selection contains [[x1, y1], [x2, y2]] but we only need x1.
-        const [[x1]] = selection 
-        // Reset selection from x1 to end in case user does not drag to make
-        // a more specific selection.
-        this.selectionStart.x = x1
-        this.selectionStart.y = 0
-        this.selectionEnd.x = this.spectroDisplayWidth
-        this.selectionEnd.y = this.spectroHeight
-        this.setPlaybackTimerangeFromSelectionPoint(this.selectionStart.x)
-      })
-
-    // Add event listern for playbackSelectionLine based on end of brush event.
-    // If there is no selection at the end, instead set the time based 
-    // playback selection line.
-    this.brush
-      .on('end', ({selection}) => {
-        this.markInteractionTime()
-
-        if (selection) {
-          // Capture selection.
-          [[this.selectionStart.x , 
-            this.selectionStart.y], 
-           [this.selectionEnd.x, 
-            this.selectionEnd.y]] = selection 
-
-          this.setPlaybackTimerangeFromSelectionRange(
-            this.selectionStart.x, 
-            this.selectionEnd.x)
-        } else {
-          // No selection, so activate playbackSelectionLine
-          this.setPlaybackSelectionLine(this.selectionStart.x)
-        }
-      })
-      
-    this.brush
-      .on('brush', (event) => {
-        console.log('brush: ', event.selection)
-        // TODO: Show selection time points and frequency points while brushing.
-      })
   }
 
   /**

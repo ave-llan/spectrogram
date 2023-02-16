@@ -19,23 +19,23 @@ class PlaybackOrchestrator {
   toggleGlobalPlayback() {
     const lastInteracted = this.spectrograms
       .reduce((spectroA, spectroB) => 
-        (spectroA.playbackController.getLastInteractionTime() >= 
-        spectroB.playbackController.getLastInteractionTime())
+        (spectroA.getLastInteractionTime() >= 
+        spectroB.getLastInteractionTime())
           ? spectroA
           : spectroB
       )
 
     // First check if any playback is active; if so stop it.
     const activePlayers = this.spectrograms
-      .filter(spectrogram => spectrogram.playbackController.isPlaybackActive())
+      .filter(spectrogram => spectrogram.isPlaybackActive())
 
     if (activePlayers.length > 0) {
       activePlayers
-        .forEach(spectrogram => spectrogram.playbackController.stopPlayback())
+        .forEach(spectrogram => spectrogram.stopPlayback())
     }
     if (!activePlayers.includes(lastInteracted)) {
       // start playback on last active.
-      lastInteracted.playbackController.togglePlayback()
+      lastInteracted.togglePlayback()
     }
   }
 }
