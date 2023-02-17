@@ -80,9 +80,6 @@ class Spectrogram {
 
     /** @type {number} Left-most visible time on the tool. */
     this.spectroDisplayStartSeconds = 0
-    /** @type {number} Right-most visible time on the tool. */
-    this.spectroDisplayEndSeconds = this.spectroDisplayStartSeconds + 
-      (this.spectroDisplayWidth / this.pixelsPerSecond)
 
     this.displayState = new DisplayState()
 
@@ -128,14 +125,6 @@ class Spectrogram {
 
     /** @type {number} Last timestamp a user interacted with spectrogram. */
     this.lastUserInteractionTimestamp = 0
-
-
-    this.spectroDisplayWidth = this.width
-      - this.spectroMargin.left 
-      - this.spectroMargin.right
-    this.spectroHeight = this.height 
-      - this.spectroMargin.top 
-      - this.spectroMargin.bottom
 
     this.playbackActive = false
     this.playbacknode,
@@ -480,24 +469,30 @@ class Spectrogram {
 
     // Add x axis (time scale)
     const timeScale = d3Scale.scaleLinear()
-      .domain([this.spectroDisplayStartSeconds, this.spectroDisplayEndSeconds])
+      .domain([this.spectroDisplayStartSeconds, this.getDisplayEndSeconds()])
       .range([0, this.spectroDisplayWidth])
     const TARGET_TICK_SPACE = 150
-    const timeAxis = d3Axis.axisBottom(timeScale)
+    const timeAxis = d3Axis.axisTop(timeScale)
       .ticks(Math.ceil(this.spectroDisplayWidth / TARGET_TICK_SPACE))
     this.svg.append('g')
       .attr('class', 'xAxis axis')
       .attr('transform', `translate(
-        ${this.spectroMargin.left},${this.height - this.spectroMargin.bottom})`
+        ${this.spectroMargin.left},${this.spectroMargin.top})`
       )
       .call(timeAxis)
-      // Add label for axis
-      .append('g')
-      .append('text')
-      // Position axis label with enough room below axis ticks
-      // .attr('transform', `translate(${this.spectroDisplayWidth},${30})`)
-      // .attr('text-anchor', 'end')
-      // .text('sec →')
+      .call(g => g.select('.domain').remove())
+      // Position ticks to the right of tick lines
+      .call(g => g.selectAll('text')
+        .attr('text-anchor', 'start')
+        .attr('y', -0.5)
+        .attr('x', 4))
+      // Slightly increase tick size to match text label
+      .call(g => g.selectAll('line')
+        .attr('y2', -7.5))
+      // Remove the tick for '0'
+      .call(g => g.selectAll('.tick')
+        .filter(d => d === 0)
+        .remove())
 
     // Add y axis (frequency scale)
     const frequencyAxis = useMusicNotation ? 
@@ -526,10 +521,12 @@ class Spectrogram {
       )
       .append('text')
       // Position axis label so arrow roughly aligns with y axis
-      .attr('transform', `translate(${-3},${-5})`)
-      // .attr('fill', 'black')
-      .attr('text-anchor', 'start')
-      .text(`↑ ${useMusicNotation ? '♫' : 'kHz'}`)
+      .attr('transform', `translate(${-3},${this.spectroHeight })`)
+      // This matches the default x adjustment on axis tick text.
+      .attr('x', -9) 
+      .attr('y', 16)
+      .attr('text-anchor', 'middle')
+      .text(`${useMusicNotation ? '♫' : 'kHz'}`)
 
     performance.measure('drawSpectrogramAxis', 'drawSpectrogramAxis')
   }
