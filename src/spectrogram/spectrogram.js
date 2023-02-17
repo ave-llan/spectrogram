@@ -471,7 +471,7 @@ class Spectrogram {
     const timeScale = d3Scale.scaleLinear()
       .domain([this.spectroDisplayStartSeconds, this.getDisplayEndSeconds()])
       .range([0, this.spectroDisplayWidth])
-    const TARGET_TICK_SPACE = 150
+    const TARGET_TICK_SPACE = 100
     const timeAxis = d3Axis.axisTop(timeScale)
       .ticks(Math.ceil(this.spectroDisplayWidth / TARGET_TICK_SPACE))
     this.svg.append('g')
@@ -484,11 +484,12 @@ class Spectrogram {
       // Position ticks to the right of tick lines
       .call(g => g.selectAll('text')
         .attr('text-anchor', 'start')
-        .attr('y', -0.5)
+        .attr('y', -1.5)
         .attr('x', 4))
       // Slightly increase tick size to match text label
       .call(g => g.selectAll('line')
-        .attr('y2', -7.5))
+        .attr('y2', -8.5)
+        .attr('y1', -1))
       // Remove the tick for '0'
       .call(g => g.selectAll('.tick')
         .filter(d => d === 0)
