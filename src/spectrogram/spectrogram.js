@@ -204,6 +204,30 @@ class Spectrogram {
       .attr('stroke', 'black')
       .attr('opacity', 0)
 
+
+    if (this.scrolling) {
+      this.minimapSelectionSvg = this.container
+        .append('svg')
+        .attr('class', 'selectionSvg')
+        .style('position', 'absolute')
+        .attr('width', this.spectroDisplayWidth)
+        .attr('height', this.minimapHeight)
+        .style('top', this.spectroMargin.top + this.spectroHeight)
+        .style('left', this.spectroMargin.left)
+
+      this.minimapPlaybackLine = this.minimapSelectionSvg
+        .append('g')
+        .attr('class', 'playbackPositionLine')
+        .append('line')
+        .attr('x1', 0)
+        .attr('x2', 0)
+        .attr('y1', 0)
+        .attr('y2', this.minimapHeight)
+        .attr('stroke', 'grey')
+        .attr('opacity', 0)
+    }
+
+    // Add play/stop button controls
     this.playbackIcon = this.svg.append('g')
       .attr('class', 'play-icon button')
       .attr('transform', 
@@ -432,7 +456,6 @@ class Spectrogram {
     })
     this.performanceMeasure.measure('drawSpectrogramData')
 
-
     if (this.scrolling) {
       this.performanceMeasure.mark('drawSpectrogramMinimap')
       this.drawSpectrogramData({
@@ -444,7 +467,6 @@ class Spectrogram {
       })
       this.performanceMeasure.measure('drawSpectrogramMinimap')
     }
-
 
     if (this.showAxes) {
       this.drawSpectrogramAxis({useMusicNotation, scaleLogarithmic})
@@ -615,6 +637,11 @@ class Spectrogram {
     this.playbackLine
       .attr('opacity', isBeingPlayedBack ? 1.0 : 0.0)
 
+    if (this.scrolling) {
+      this.minimapPlaybackLine
+        .attr('opacity', isBeingPlayedBack ? 1.0 : 0.0)
+    }
+
     if (!isBeingPlayedBack) {
       cancelAnimationFrame(this.playbackLineAnimationId)
     }
@@ -634,8 +661,8 @@ class Spectrogram {
     if (timePosition > this.getDisplayEndSeconds()) {
       this.spectroDisplayStartSeconds = this.getDisplayEndSeconds()
 
-      // Hide previously selection playback line if it was visible, as the
-      // user is making a new selection.
+      // Hide previously selection playback line if it was visible, as that
+      // area is no longer visible.
       this.playbackSelectionLine
         .attr('opacity', 0)
 
@@ -648,15 +675,23 @@ class Spectrogram {
           this.spectroDisplayStartSeconds * this.pixelsPerSecond}px`)
     }
 
-
     const percentVisibleComplete = 
       (timePosition - this.spectroDisplayStartSeconds) / 
       this.getVisibleTimeDuration()
-    const xPosition = this.spectroDisplayWidth * percentVisibleComplete
-
+    const xPositionSpectro = this.spectroDisplayWidth * percentVisibleComplete
     this.playbackLine
-      .attr('x1', xPosition)
-      .attr('x2', xPosition)
+      .attr('x1', xPositionSpectro)
+      .attr('x2', xPositionSpectro)
+
+    if (this.scrolling) {
+      // Also update minimap playbackline
+      const percentComplete = timePosition / this.audioData.duration
+      const xPositionMinimap = this.spectroDisplayWidth * percentComplete
+      this.minimapPlaybackLine
+        .attr('x1', xPositionMinimap)
+        .attr('x2', xPositionMinimap)
+    }
+
 
     this.playbackLineAnimationId = 
       requestAnimationFrame(() => this.animatePlaybackLine())
