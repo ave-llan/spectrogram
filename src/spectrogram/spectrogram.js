@@ -47,6 +47,15 @@ class Spectrogram {
     /** @type {number} height of the Spectrogram visualizer tool. */
     this.height = height
 
+    console.log('width: ', this.width)
+    console.log('height: ', this.height)
+
+    /** 
+     * @type {boolean} true if spectrogram will be scrolled instead of 
+     * fit to page. 
+     */
+    this.scrolling = scrolling
+
     /** @type {boolean} whether or not the axes should be shown. */
     this.showAxes = showAxes
 
@@ -69,14 +78,19 @@ class Spectrogram {
     this.pixelsPerSecond = scrolling 
       ? 100 
       : this.spectroDisplayWidth / this.frequencyData.duration
- 
+
     /** The full width of the spectrogram display if fully rendered. */
     this.spectroFullWidth = scrolling 
       ? Math.round(this.pixelsPerSecond * this.frequencyData.duration)
       : this.spectroDisplayWidth
+
+    /** @type {number} Height of the minimap in pixels. */
+    this.minimapHeight = 50
+
     /** The rendered height of the spectrogram display. */
     this.spectroHeight = this.height 
       - this.spectroMargin.top - this.spectroMargin.bottom
+      - (scrolling ? this.minimapHeight : 0)
 
     /** @type {number} Left-most visible time on the tool. */
     this.spectroDisplayStartSeconds = 0
@@ -104,6 +118,24 @@ class Spectrogram {
       .node()
       .getContext('2d')
 
+    /** 
+     *  @type {!d3Selection.Selection} A canvas for drawing spectrogram data in
+     *  a minimap.
+     */
+    this.minimapCanvas = this.container
+      .append('canvas')
+      .attr('class', 'minimap')
+      .attr('width', this.spectroDisplayWidth)
+      .attr('height', this.minimapHeight)
+      .style('position', 'absolute')
+      .style('left', `${this.spectroMargin.left}px`)
+      .style('top', `${this.spectroMargin.top + this.spectroHeight}px`)
+
+    /** @type {!CanvasRenderingContext2D} canvas context for minimap. */ 
+    this.minimapCtx = this.minimapCanvas
+      .node()
+      .getContext('2d')
+
     // Create svg that will contain the axis
     this.svg = this.container
       .append('svg')
@@ -113,7 +145,6 @@ class Spectrogram {
       .attr('height', this.height)
 
     this.drawSpectrogram(this.displayState.getState())
-    
 
 
     // PLAYBACK and ANIMATION.
@@ -391,7 +422,30 @@ class Spectrogram {
    * Draws spectrogram data and axis.
    */
   drawSpectrogram({scaleLogarithmic, useMusicNotation}) {
-    this.drawSpectrogramData(this.frequencyData.data, {scaleLogarithmic})
+    this.performanceMeasure.mark('drawSpectrogramData')
+    this.drawSpectrogramData({
+      data                   : this.frequencyData.data,
+      canvasRenderingContext : this.spectrogramCtx,
+      width                  : this.spectroFullWidth,
+      height                 : this.spectroHeight,
+      scaleLogarithmic
+    })
+    this.performanceMeasure.measure('drawSpectrogramData')
+
+
+    if (this.scrolling) {
+      this.performanceMeasure.mark('drawSpectrogramMinimap')
+      this.drawSpectrogramData({
+        data                   : this.frequencyData.data,
+        canvasRenderingContext : this.minimapCtx,
+        width                  : this.spectroDisplayWidth,
+        height                 : this.minimapHeight,
+        scaleLogarithmic       : false
+      })
+      this.performanceMeasure.measure('drawSpectrogramMinimap')
+    }
+
+
     if (this.showAxes) {
       this.drawSpectrogramAxis({useMusicNotation, scaleLogarithmic})
     }
@@ -403,13 +457,15 @@ class Spectrogram {
    *     sample should be a normalized array of decibel values between 0 and 
    *     255. The frequencies are spread linearly from 0 to 1/2 of the sample
    *     rate.
+   * @param {!CanvasRenderingContext2D} canvasRenderingContext
    * @private
    */ 
-  drawSpectrogramData(data, {scaleLogarithmic = true} = {}) {
-    this.performanceMeasure.mark('drawSpectrogramData')
-
-    const width = this.spectroFullWidth * 1
-    const height = this.spectroHeight * 1
+  drawSpectrogramData({
+    data, 
+    canvasRenderingContext, 
+    width, 
+    height, 
+    scaleLogarithmic = true} = {}) {
 
     const byteCount = 4 * width * height
     const imageArray = new Uint8ClampedArray(byteCount)
@@ -452,8 +508,7 @@ class Spectrogram {
       width, 
       height)
 
-    this.spectrogramCtx.putImageData(imageData, 0, 0)
-    this.performanceMeasure.measure('drawSpectrogramData')
+    canvasRenderingContext.putImageData(imageData, 0, 0)
   }
 
   /**
