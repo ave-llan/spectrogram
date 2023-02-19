@@ -182,6 +182,10 @@ class Spectrogram {
     this.lastUserInteractionTimestamp = 0
 
     this.playbackActive = false
+    // True if the user has dragged the minimapduring playback.
+    // This indicats we should not automatically slide the window when playback
+    // is reachign the end.
+    this.userHasDraggedDuringPlayback = false
     this.playbacknode,
     this.playbackLineAnimationId,
     /** @type {number} World time when playback started. */
@@ -267,8 +271,10 @@ class Spectrogram {
         // TODO also update zoom level for 'handle' events (adjusting size of
         // selected area).
         if (mode === 'drag') {
+          this.markInteractionTime()
+          this.userHasDraggedDuringPlayback = true
           const [x1, x2] = selection
-          this.spectroDisplayStartSeconds = this.getTimePositionFromX(x1)
+          this.spectroDisplayStartSeconds = this.getTimePositionFromMinimapX(x1)
 
           this.slidingContainer
             .style(
@@ -705,8 +711,9 @@ class Spectrogram {
 
     // Check if we are reaching the end of visible area and need to update
     // the display.
-    if (timePosition > this.getDisplayEndSeconds() - 1 && 
-       this.getDisplayEndSeconds() < this.playbackSelectionEnd) {
+    if (!this.userHasDraggedDuringPlayback &&
+        timePosition > this.getDisplayEndSeconds() - 1 && 
+        this.getDisplayEndSeconds() < this.playbackSelectionEnd) {
       this.spectroDisplayStartSeconds = 
         Math.min(
           this.getDisplayEndSeconds(), 
@@ -765,6 +772,7 @@ class Spectrogram {
     source.onended = () => { 
       this.updatePlaybackButtonAndLineAnimation(false)
       this.playbackActive = false
+      this.userHasDraggedDuringPlayback = false
     }
 
     source.connect(this.audioContext.destination)
@@ -772,6 +780,7 @@ class Spectrogram {
 
     this.playbackStartedAt = this.audioContext.currentTime
     this.timeInAudioClipWherePlaybackStarted = this.playbackSelectionStart
+    this.userHasDraggedDuringPlayback = false
 
     return source
   }
@@ -831,7 +840,7 @@ class Spectrogram {
    * @param {number} startX
    */
   setPlaybackTimerangeFromSelectionPoint(startX) {
-    this.playbackSelectionStart = this.getTimePositionFromX(startX)
+    this.playbackSelectionStart = this.getTimePositionFromFullWidthX(startX)
     this.playbackSelectionEnd = this.audioData.duration
   }
 
@@ -842,16 +851,23 @@ class Spectrogram {
    * @param {number} endX
    */
   setPlaybackTimerangeFromSelectionRange(startX, endX) {
-    this.playbackSelectionStart = this.getTimePositionFromX(startX)
-    this.playbackSelectionEnd = this.getTimePositionFromX(endX)
+    this.playbackSelectionStart = this.getTimePositionFromFullWidthX(startX)
+    this.playbackSelectionEnd = this.getTimePositionFromFullWidthX(endX)
   }
 
   /**
+   * Gets time position from x on the full width spectrogram.
+   * (Not just visible area.)
    * @param {number} xPosition
    * @return {number} time position in seconds
    */ 
-  getTimePositionFromX(xPosition) {
+  getTimePositionFromFullWidthX(xPosition) {
     const xPercentage = xPosition / this.spectroFullWidth
+    return this.audioData.duration * xPercentage
+  }
+
+  getTimePositionFromMinimapX(xPosition) {
+    const xPercentage = xPosition / this.spectroDisplayWidth
     return this.audioData.duration * xPercentage
   }
 
