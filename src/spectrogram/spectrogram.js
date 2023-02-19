@@ -2,6 +2,7 @@ import * as d3Axis from 'd3-axis'
 import * as d3Brush from 'd3-brush'
 import * as d3Selection from 'd3-selection'
 import * as d3Scale from 'd3-scale'
+import * as d3Transition from 'd3-transition'
 import {AudioData} from './audio-data.js'
 import {PerformanceMeasure} from './performance-measure.js'
 import {PlaybackOrchestrator} from './playback-orchestrator.js'
@@ -112,15 +113,22 @@ class Spectrogram {
       .style('height', `${this.height}px`)
       .style('position', 'relative')
 
+    this.slidingContainer = this.container 
+      .append('div')
+      .attr('class', 'slidingContainer')
+      .style('width', `${this.spectroFullWidth}px`)
+      .style('height', `${this.spectroHeight}px`)
+      .style('position', 'absolute')
+      .style('left', `${this.spectroMargin.left}px`)
+      .style('top', `${this.spectroMargin.top}px`)
+
+
     /** @type {!d3Selection.Selection} A canvas for drawing spectrogram data. */
-    this.spectrogramCanvas = this.container
+    this.spectrogramCanvas = this.slidingContainer
       .append('canvas')
       .attr('class', 'spectrogram')
       .attr('width', this.spectroFullWidth)
       .attr('height', this.spectroHeight)
-      .style('position', 'absolute')
-      .style('left', `${this.spectroMargin.left}px`)
-      .style('top', `${this.spectroMargin.top}px`)
 
     /** @type {!CanvasRenderingContext2D} canvas context for spectrogram. */ 
     this.spectrogramCtx = this.spectrogramCanvas
@@ -146,14 +154,20 @@ class Spectrogram {
       .node()
       .getContext('2d')
 
-    // Create svg that will contain the axis
-    this.svg = this.container
+    // Create svg that will contain the frequency axis
+    this.frequencyAxisSvg = this.container
       .append('svg')
-      .attr('class', 'spectrogramTool')
+      .attr('class', 'frequencyAxis')
       .style('position', 'absolute')
-      .attr('width', this.width)
+      .attr('width', this.spectroMargin.left)
       .attr('height', this.height)
 
+    this.timeAxisSvg = this.container
+      .append('svg')
+      .attr('class', 'timeAxis')
+      .style('position', 'absolute')
+      .attr('width', this.width)
+      .attr('height', this.spectroMargin.top)
     this.drawSpectrogram(this.displayState.getState())
 
 
@@ -183,14 +197,14 @@ class Spectrogram {
     this.selectionEnd = {x: this.spectroDisplayWidth, y: this.spectroHeight}
 
     // Create a new SVG overlay for selection UI. 
-    this.selectionSvg = this.container
+    this.selectionSvg = this.slidingContainer
       .append('svg')
       .attr('class', 'selectionSvg')
       .style('position', 'absolute')
-      .attr('width', this.spectroDisplayWidth)
+      .attr('width', this.spectroFullWidth)
       .attr('height', this.spectroHeight)
-      .style('top', this.spectroMargin.top)
-      .style('left', this.spectroMargin.left)
+      .style('top', 0)
+      .style('left', 0)
 
     this.playbackSelectionLine = this.selectionSvg
       .append('g')
@@ -239,7 +253,7 @@ class Spectrogram {
     }
 
     // Add play/stop button controls
-    this.playbackIcon = this.svg.append('g')
+    this.playbackIcon = this.timeAxisSvg.append('g')
       .attr('class', 'play-icon button')
       .attr('transform', 
         `translate(
@@ -293,6 +307,7 @@ class Spectrogram {
         const [[x1]] = selection 
         // Reset selection from x1 to end in case user does not drag to make
         // a more specific selection.
+        console.log('x1:', x1)
         this.selectionStart.x = x1
         this.selectionStart.y = 0
         this.selectionEnd.x = this.spectroDisplayWidth
@@ -325,7 +340,6 @@ class Spectrogram {
       
     this.playbackAreaSelectionBrush
       .on('brush', (event) => {
-        console.log('brush: ', event.selection)
         // TODO: Show selection time points and frequency points while brushing.
       })
   }
@@ -552,8 +566,8 @@ class Spectrogram {
     performance.mark('drawSpectrogramAxis')
 
     // Clear current scales in case this is a re-draw
-    this.svg.select('.xAxis').remove()
-    this.svg.select('.yAxis').remove()
+    this.timeAxisSvg.select('.xAxis').remove()
+    this.frequencyAxisSvg.select('.yAxis').remove()
 
     // Add x axis (time scale)
     const timeScale = d3Scale.scaleLinear()
@@ -562,7 +576,7 @@ class Spectrogram {
     const TARGET_TICK_SPACE = 100
     const timeAxis = d3Axis.axisTop(timeScale)
       .ticks(Math.ceil(this.spectroDisplayWidth / TARGET_TICK_SPACE))
-    this.svg.append('g')
+    this.timeAxisSvg.append('g')
       .attr('class', 'xAxis axis')
       .attr('transform', `translate(
         ${this.spectroMargin.left},${this.spectroMargin.top})`
@@ -597,7 +611,7 @@ class Spectrogram {
         spectroHeight : this.spectroHeight,
         scaleLogarithmic
       })
-    this.svg.append('g')
+    this.frequencyAxisSvg.append('g')
       .attr('class', 'yAxis button axis')
       .attr('transform', `translate(
         ${this.spectroMargin.left},${this.spectroMargin.top})`
@@ -662,41 +676,38 @@ class Spectrogram {
    * Animates a line to show the current playback position.
    * @return {number} the requestAnimationFrame ID for cancelling 
    */
-  animatePlaybackLine() {
+  animatePlayback() {
     // Draw a vertical line to show current position of playback
     const timePosition = this.audioContext.currentTime 
       - (this.playbackStartedAt - this.timeInAudioClipWherePlaybackStarted)
 
     // Check if we have reached the end of visible area and need to update
     // display.
-    if (timePosition > this.getDisplayEndSeconds()) {
+    if (timePosition > this.getDisplayEndSeconds() - 1) {
       this.spectroDisplayStartSeconds = this.getDisplayEndSeconds()
 
-      // Hide previously selection playback line if it was visible, as that
-      // area is no longer visible.
-      this.playbackSelectionLine
-        .attr('opacity', 0)
-
       // For now, set playback selection start to the new visible beginning.
-      this.setPlaybackTimerangeFromSelectionPoint(0)
+      // this.setPlaybackTimerangeFromSelectionPoint(0)
 
-      this.spectrogramCanvas.style(
-        'left', 
-        `${this.spectroMargin.left - 
-          this.spectroDisplayStartSeconds * this.pixelsPerSecond}px`)
+      this.slidingContainer
+        .transition(
+          d3Transition.transition()
+            .duration(2000)
+        )
+        .style(
+          'left', 
+          `${this.spectroMargin.left - 
+            this.spectroDisplayStartSeconds * this.pixelsPerSecond}px`)
     }
 
-    const percentVisibleComplete = 
-      (timePosition - this.spectroDisplayStartSeconds) / 
-      this.getVisibleTimeDuration()
-    const xPositionSpectro = this.spectroDisplayWidth * percentVisibleComplete
+    const percentComplete = timePosition / this.audioData.duration
+    const xPositionSpectro = this.spectroFullWidth * percentComplete
     this.playbackLine
       .attr('x1', xPositionSpectro)
       .attr('x2', xPositionSpectro)
 
     if (this.scrolling) {
       // Also update minimap playbackline
-      const percentComplete = timePosition / this.audioData.duration
       const xPositionMinimap = this.spectroDisplayWidth * percentComplete
       this.minimapPlaybackLine
         .attr('x1', xPositionMinimap)
@@ -704,7 +715,7 @@ class Spectrogram {
     }
 
     this.playbackLineAnimationId = 
-      requestAnimationFrame(() => this.animatePlaybackLine())
+      requestAnimationFrame(() => this.animatePlayback())
   }
 
   setPlaybackSelectionLine(xPosition) {
@@ -764,7 +775,7 @@ class Spectrogram {
       this.playbackNode = this.playBuffer({
         buffer: this.getBufferForPlayback(),
       })
-      this.animatePlaybackLine()
+      this.animatePlayback()
     } else if (this.playbackNode) {
       this.playbackNode.stop()
     }
@@ -810,10 +821,8 @@ class Spectrogram {
    * @return {number} time position in seconds
    */ 
   getTimePositionFromX(xPosition) {
-    const xPercentage = xPosition / this.spectroDisplayWidth
-
-    return this.spectroDisplayStartSeconds + 
-      this.getVisibleTimeDuration() * xPercentage
+    const xPercentage = xPosition / this.spectroFullWidth
+    return this.audioData.duration * xPercentage
   }
 
   /**
