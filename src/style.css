@@ -1,3 +1,7 @@
+.spectrogramVisualizer {
+  overflow: hidden;
+}
+
 .button {
   cursor:  pointer;
 }
