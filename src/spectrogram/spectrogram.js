@@ -250,6 +250,15 @@ class Spectrogram {
         .attr('y2', this.minimapHeight)
         .attr('stroke', 'grey')
         .attr('opacity', 0)
+
+      /** 
+       * @const {!Function} D3 brush UI controller for selecting a
+       *      two-dimensional region by clicking and dragging the mouse.
+       */
+      this.minimapSelectionBrush = d3Brush.brushX()
+      this.minimapSelectionSvg
+        .call(this.minimapSelectionBrush)
+        .call(this.minimapSelectionBrush.move, this.getMinimapMirrorPosition())
     }
 
     // Add play/stop button controls
@@ -336,11 +345,6 @@ class Spectrogram {
           // No selection, so activate playbackSelectionLine
           this.setPlaybackSelectionLine(this.selectionStart.x)
         }
-      })
-      
-    this.playbackAreaSelectionBrush
-      .on('brush', (event) => {
-        // TODO: Show selection time points and frequency points while brushing.
       })
   }
 
@@ -691,15 +695,20 @@ class Spectrogram {
           this.audioData.duration - this.getVisibleTimeDuration()
         )
 
+      const slideTransition =  d3Transition.transition()
+        .duration(2000)
+
       this.slidingContainer
-        .transition(
-          d3Transition.transition()
-            .duration(2000)
-        )
+        .transition(slideTransition)
         .style(
           'left', 
           `${this.spectroMargin.left - 
             this.spectroDisplayStartSeconds * this.pixelsPerSecond}px`)
+
+      this.minimapSelectionSvg
+        .transition(slideTransition)
+        .call(this.minimapSelectionBrush.move, this.getMinimapMirrorPosition())
+
     }
 
     const percentComplete = timePosition / this.audioData.duration
@@ -839,6 +848,19 @@ class Spectrogram {
    */
   getDisplayEndSeconds() {
     return this.spectroDisplayStartSeconds + this.getVisibleTimeDuration()
+  }
+
+  /**
+   * Returns the x1, x2 position of the minimap to mirror the visible =
+   * spectrogram.
+   * @return {!Array<number>}
+   */ 
+  getMinimapMirrorPosition() {
+    return [(this.spectroDisplayStartSeconds / this.audioData.duration) 
+            * this.spectroDisplayWidth,
+            (this.getDisplayEndSeconds() / this.audioData.duration) 
+            * this.spectroDisplayWidth
+    ]
   }
 }
 
