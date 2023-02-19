@@ -681,13 +681,15 @@ class Spectrogram {
     const timePosition = this.audioContext.currentTime 
       - (this.playbackStartedAt - this.timeInAudioClipWherePlaybackStarted)
 
-    // Check if we have reached the end of visible area and need to update
-    // display.
-    if (timePosition > this.getDisplayEndSeconds() - 1) {
-      this.spectroDisplayStartSeconds = this.getDisplayEndSeconds()
-
-      // For now, set playback selection start to the new visible beginning.
-      // this.setPlaybackTimerangeFromSelectionPoint(0)
+    // Check if we are reaching the end of visible area and need to update
+    // the display.
+    if (timePosition > this.getDisplayEndSeconds() - 1 && 
+       this.getDisplayEndSeconds() < this.playbackSelectionEnd) {
+      this.spectroDisplayStartSeconds = 
+        Math.min(
+          this.getDisplayEndSeconds(), 
+          this.audioData.duration - this.getVisibleTimeDuration()
+        )
 
       this.slidingContainer
         .transition(
