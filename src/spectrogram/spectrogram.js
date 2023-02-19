@@ -259,6 +259,24 @@ class Spectrogram {
       this.minimapSelectionSvg
         .call(this.minimapSelectionBrush)
         .call(this.minimapSelectionBrush.move, this.getMinimapMirrorPosition())
+
+      this.minimapSelectionBrush.on('brush', (
+        {selection, mode}) => {
+        // 'brush' event will be triggered when animating automatic moves
+        // for scolling. Only respond to user initiated 'drag' events.
+        // TODO also update zoom level for 'handle' events (adjusting size of
+        // selected area).
+        if (mode === 'drag') {
+          const [x1, x2] = selection
+          this.spectroDisplayStartSeconds = this.getTimePositionFromX(x1)
+
+          this.slidingContainer
+            .style(
+              'left', 
+              `${this.spectroMargin.left - 
+            this.spectroDisplayStartSeconds * this.pixelsPerSecond}px`)
+        }
+      })
     }
 
     // Add play/stop button controls
@@ -746,7 +764,8 @@ class Spectrogram {
     const source = new AudioBufferSourceNode(this.audioContext, {buffer})
     source.onended = () => { 
       this.updatePlaybackButtonAndLineAnimation(false)
-      this.playbackActive = false}
+      this.playbackActive = false
+    }
 
     source.connect(this.audioContext.destination)
     source.start()
@@ -862,6 +881,7 @@ class Spectrogram {
             * this.spectroDisplayWidth
     ]
   }
+
 }
 
 function frequencyScaleAxis({
