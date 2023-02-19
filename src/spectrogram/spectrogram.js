@@ -85,12 +85,21 @@ class Spectrogram {
       : this.spectroDisplayWidth
 
     /** @type {number} Height of the minimap in pixels. */
-    this.minimapHeight = 50
+    this.minimapHeight = 25
+
+    this.minimapMargin = {
+      top    : 5, 
+      right  : 0, 
+      bottom : 0, 
+      left   : 0,
+    }
 
     /** The rendered height of the spectrogram display. */
     this.spectroHeight = this.height 
       - this.spectroMargin.top - this.spectroMargin.bottom
-      - (scrolling ? this.minimapHeight : 0)
+      - (scrolling 
+        ? this.minimapHeight + this.minimapMargin.top
+        : 0)
 
     /** @type {number} Left-most visible time on the tool. */
     this.spectroDisplayStartSeconds = 0
@@ -129,7 +138,8 @@ class Spectrogram {
       .attr('height', this.minimapHeight)
       .style('position', 'absolute')
       .style('left', `${this.spectroMargin.left}px`)
-      .style('top', `${this.spectroMargin.top + this.spectroHeight}px`)
+      .style('top', `${this.spectroMargin.top + this.spectroHeight 
+        + this.minimapMargin.top}px`)
 
     /** @type {!CanvasRenderingContext2D} canvas context for minimap. */ 
     this.minimapCtx = this.minimapCanvas
@@ -212,7 +222,8 @@ class Spectrogram {
         .style('position', 'absolute')
         .attr('width', this.spectroDisplayWidth)
         .attr('height', this.minimapHeight)
-        .style('top', this.spectroMargin.top + this.spectroHeight)
+        .style('top', this.spectroMargin.top + this.spectroHeight 
+          + this.minimapMargin.top)
         .style('left', this.spectroMargin.left)
 
       this.minimapPlaybackLine = this.minimapSelectionSvg
@@ -691,7 +702,6 @@ class Spectrogram {
         .attr('x1', xPositionMinimap)
         .attr('x2', xPositionMinimap)
     }
-
 
     this.playbackLineAnimationId = 
       requestAnimationFrame(() => this.animatePlaybackLine())
