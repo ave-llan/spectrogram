@@ -116,15 +116,23 @@ class Spectrogram {
     this.slidingContainer = this.container 
       .append('div')
       .attr('class', 'slidingContainer')
+      .style('position', 'relative')
+      .style('width', `${this.spectroDisplayWidth}px`)
+      .style('height', `${this.spectroHeight + this.spectroMargin.top}px`)
+      .style('margin-left', `${this.spectroMargin.left}px`)
+      .style('overflow', 'hidden')
+
+    this.slidingView = this.slidingContainer 
+      .append('div')
+      .attr('class', 'slidingView')
       .style('width', `${this.spectroFullWidth}px`)
       .style('height', `${this.spectroHeight + this.spectroMargin.top}px`)
       .style('position', 'absolute')
-      .style('left', `${this.spectroMargin.left}px`)
-      .style('top', `${0}px`)
-
+      .style('left','0px')
+      .style('top', '0px')
 
     /** @type {!d3Selection.Selection} A canvas for drawing spectrogram data. */
-    this.spectrogramCanvas = this.slidingContainer
+    this.spectrogramCanvas = this.slidingView
       .append('canvas')
       .attr('class', 'spectrogram')
       .attr('width', this.spectroFullWidth)
@@ -162,8 +170,10 @@ class Spectrogram {
       .style('position', 'absolute')
       .attr('width', this.spectroMargin.left)
       .attr('height', this.height)
+      .style('top', 0)
+      .style('left', 0)
 
-    this.timeAxisSvg = this.slidingContainer
+    this.timeAxisSvg = this.slidingView
       .append('svg')
       .attr('class', 'timeAxis')
       .style('position', 'absolute')
@@ -171,8 +181,8 @@ class Spectrogram {
       .attr('height', this.spectroMargin.top)
       .style('top', 0)
       .style('left', 0)
-    this.drawSpectrogram(this.displayState.getState())
 
+    this.drawSpectrogram(this.displayState.getState())
 
     // PLAYBACK and ANIMATION.
     this.audioContext = new AudioContext()
@@ -204,7 +214,7 @@ class Spectrogram {
     this.selectionEnd = {x: this.spectroDisplayWidth, y: this.spectroHeight}
 
     // Create a new SVG overlay for selection UI. 
-    this.selectionSvg = this.slidingContainer
+    this.selectionSvg = this.slidingView
       .append('svg')
       .attr('class', 'selectionSvg')
       .style('position', 'absolute')
@@ -279,11 +289,10 @@ class Spectrogram {
           const [x1, x2] = selection
           this.spectroDisplayStartSeconds = this.getTimePositionFromMinimapX(x1)
 
-          this.slidingContainer
+          this.slidingView
             .style(
               'left', 
-              `${this.spectroMargin.left - 
-            this.spectroDisplayStartSeconds * this.pixelsPerSecond}px`)
+              `${0 - this.spectroDisplayStartSeconds * this.pixelsPerSecond}px`)
         } else if (mode === 'handle') {
           return false
         }
@@ -732,11 +741,11 @@ class Spectrogram {
       const slideTransition =  d3Transition.transition()
         .duration(2000)
 
-      this.slidingContainer
+      this.slidingView
         .transition(slideTransition)
         .style(
           'left', 
-          `${this.spectroMargin.left - 
+          `${0 - 
             this.spectroDisplayStartSeconds * this.pixelsPerSecond}px`)
 
       this.minimapSelectionSvg
