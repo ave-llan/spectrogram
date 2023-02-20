@@ -117,10 +117,10 @@ class Spectrogram {
       .append('div')
       .attr('class', 'slidingContainer')
       .style('width', `${this.spectroFullWidth}px`)
-      .style('height', `${this.spectroHeight}px`)
+      .style('height', `${this.spectroHeight + this.spectroMargin.top}px`)
       .style('position', 'absolute')
       .style('left', `${this.spectroMargin.left}px`)
-      .style('top', `${this.spectroMargin.top}px`)
+      .style('top', `${0}px`)
 
 
     /** @type {!d3Selection.Selection} A canvas for drawing spectrogram data. */
@@ -129,6 +129,7 @@ class Spectrogram {
       .attr('class', 'spectrogram')
       .attr('width', this.spectroFullWidth)
       .attr('height', this.spectroHeight)
+      .style('margin-top', `${this.spectroMargin.top}px`)
 
     /** @type {!CanvasRenderingContext2D} canvas context for spectrogram. */ 
     this.spectrogramCtx = this.spectrogramCanvas
@@ -162,12 +163,14 @@ class Spectrogram {
       .attr('width', this.spectroMargin.left)
       .attr('height', this.height)
 
-    this.timeAxisSvg = this.container
+    this.timeAxisSvg = this.slidingContainer
       .append('svg')
       .attr('class', 'timeAxis')
       .style('position', 'absolute')
-      .attr('width', this.width)
+      .attr('width', this.spectroFullWidth)
       .attr('height', this.spectroMargin.top)
+      .style('top', 0)
+      .style('left', 0)
     this.drawSpectrogram(this.displayState.getState())
 
 
@@ -207,7 +210,7 @@ class Spectrogram {
       .style('position', 'absolute')
       .attr('width', this.spectroFullWidth)
       .attr('height', this.spectroHeight)
-      .style('top', 0)
+      .style('top', this.spectroMargin.top)
       .style('left', 0)
 
     this.playbackSelectionLine = this.selectionSvg
@@ -281,6 +284,8 @@ class Spectrogram {
               'left', 
               `${this.spectroMargin.left - 
             this.spectroDisplayStartSeconds * this.pixelsPerSecond}px`)
+        } else if (mode === 'handle') {
+          return false
         }
       })
     }
@@ -599,11 +604,11 @@ class Spectrogram {
 
     // Add x axis (time scale)
     const timeScale = d3Scale.scaleLinear()
-      .domain([this.spectroDisplayStartSeconds, this.getDisplayEndSeconds()])
-      .range([0, this.spectroDisplayWidth])
+      .domain([0, this.audioData.duration])
+      .range([0, this.spectroFullWidth])
     const TARGET_TICK_SPACE = 100
     const timeAxis = d3Axis.axisTop(timeScale)
-      .ticks(Math.ceil(this.spectroDisplayWidth / TARGET_TICK_SPACE))
+      .ticks(Math.ceil(this.spectroFullWidth / TARGET_TICK_SPACE))
     this.timeAxisSvg.append('g')
       .attr('class', 'xAxis axis')
       .attr('transform', `translate(
