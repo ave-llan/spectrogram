@@ -290,14 +290,18 @@ class Spectrogram {
       })
     }
 
+    this.playbackControlSvg = this.container
+      .append('svg')
+      .attr('class', 'playbackControls')
+      .style('position', 'absolute')
+      .attr('width', this.spectroDisplayWidth)
+      .attr('height', this.spectroMargin.bottom)
+      .style('left', this.spectroMargin.left)
+      .style('bottom', 0)
+
     // Add play/stop button controls
-    this.playbackIcon = this.timeAxisSvg.append('g')
+    this.playbackIcon = this.playbackControlSvg.append('g')
       .attr('class', 'play-icon button')
-      .attr('transform', 
-        `translate(
-          ${this.width - (this.iconSize + this.spectroMargin.right)},
-          ${this.spectroMargin.top - this.spectroPadding - this.iconSize})`
-      )
 
     this.playbackIconImage = this.playbackIcon.append('image')
       .attr('id', 'playback-icon')
