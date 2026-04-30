@@ -9,8 +9,9 @@ class PlaybackOrchestrator {
     this.spectrograms = spectrograms
 
     // Control global playback via Space.
-    document.addEventListener('keydown', ({code}) => {
-      if (code == 'Space') {
+    document.addEventListener('keydown', (e) => {
+      if (e.code == 'Space') {
+        e.preventDefault()
         this.toggleGlobalPlayback()
       }
     })
