@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Spectrogram</title>
+</head>
+<style>
+  body {
+    background-color: lightgray;
+  }
+
+  .demo {
+    margin-bottom:30px;
+    background-color:white;
+    min-height: 328px;
+  }
+</style>
+<body>
+  <div class="demo">
+    <spectrogram
+      src="./audio/blackheaded-grosbeak-song.wav"
+      showAxes="false"
+      maxFrequencyToRender="8000">
+    </spectrogram>
+  </div>
+
+  <div class="demo">
+    <spectrogram
+      src="./audio/solitaire.wav"
+      showAxes="true">
+    </spectrogram>
+  </div>
+
+  <div class="demo">
+    <spectrogram
+      src="./audio/crossbills-raven.wav"
+      showAxes="true"
+      minFrequencyToRender="880"
+      scrolling="true">
+    </spectrogram>
+  </div>
+
+  <div class="demo">
+    <spectrogram
+      src="./audio/willow-meadow.wav"
+      showAxes="true"
+      minFrequencyToRender="880"
+      scrolling="true"
+      height="350">
+    </spectrogram>
+  </div>
+
+  <div class="demo">
+    <spectrogram
+      src="./audio/robin-swift.wav"
+      showAxes="true"
+      minFrequencyToRender="880"
+      scrolling="true">
+    </spectrogram>
+  </div>
+
+  <div class="demo">
+    <spectrogram
+      src="./audio/valle-verde-bells.wav"
+      showAxes="true"
+      minFrequencyToRender="880"
+      scrolling="true">
+    </spectrogram>
+  </div>
+
+  <script type="module" src="/src/index.js"></script>
+</body>
+</html>

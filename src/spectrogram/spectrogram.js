@@ -486,6 +486,27 @@ class Spectrogram {
       maxFrequency          : 14080,
       smoothingTimeConstant : 0.,
     })
+
+    let maxDb = -Infinity
+    let maxDbSampleIndex = -1
+    let maxDbBinIndex = -1
+
+    for (let sampleIndex = 0; sampleIndex < frequencyData.data.length; sampleIndex++) {
+      const sample = frequencyData.data[sampleIndex]
+      for (let binIndex = 0; binIndex < sample.length; binIndex++) {
+        const dbValue = sample[binIndex]
+        if (dbValue > maxDb) {
+          maxDb = dbValue
+          maxDbSampleIndex = sampleIndex
+          maxDbBinIndex = binIndex
+        }
+      }
+    }
+
+    console.log(`Highest dB value: ${maxDb}`)
+    console.log(`Sample index containing the highest dB value: ${maxDbSampleIndex}`)
+    console.log(`Bin index within the sample containing the highest dB value: ${maxDbBinIndex}`)
+    
     performanceMeasure.measure('getFrequencyData', 'getFrequencyData')
 
     // If width is not set but widthSizeScale is, calculate width.
@@ -737,7 +758,6 @@ class Spectrogram {
           this.getDisplayEndSeconds(), 
           this.audioData.duration - this.getVisibleTimeDuration()
         )
-
       const slideTransition =  d3Transition.transition()
         .duration(2000)
 

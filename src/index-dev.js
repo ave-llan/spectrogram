@@ -10,6 +10,8 @@ import solitaire from './data/solitaire.wav'
 import spottedTowhee from './data/spotted-towhee.wav'
 import towheeSong from './data/towhee-song.wav'
 import willow from './data/willow.wav'
+import willowMeadow from './data/willow-meadow.wav'
 import willowTwoCalls from './data/willow-two-calls.wav'
+import valleVerdeBells from './data/valle-verde-bells.wav'
 
 Spectrogram.forElements([...document.querySelectorAll('spectrogram')])

@@ -1,4 +1,5 @@
 import {FrequencyData} from './frequency-data.js'
+import {FastFrequencyAnalyzer} from './fast-frequency-analyzer.js'
 
 class AudioData {
   /**
@@ -54,6 +55,15 @@ class AudioData {
     maxFrequency = 44100 / 2,
     smoothingTimeConstant = 0.5,
   } = {}) {
+
+    // const fastFrequencyAnalyzer = new FastFrequencyAnalyzer(this.buffer)
+    // return fastFrequencyAnalyzer.getFrequencyData({
+    //   sampleTimeLength,
+    //   fftSize,
+    //   maxFrequency,
+    //   smoothingTimeConstant,
+    // })
+
     const offlineContext = new OfflineAudioContext(
       this.numberOfChannels,
       this.length,
@@ -82,6 +92,7 @@ class AudioData {
     return new Promise((resolve) => {
       for (let frameIndex = 0; frameIndex < numSamples; frameIndex++) {
         offlineContext.suspend(sampleTimeLength * frameIndex).then(() => {
+          console.log('suspend frameIndex: ', frameIndex)
           analyser.getByteFrequencyData(frequencyData[frameIndex])
           offlineContext.resume()
           // After populating last data, resolve promise.
