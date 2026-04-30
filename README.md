@@ -4,9 +4,9 @@ Given audio, visualizes as a spectrogram. Provides basic playback controls.
 ## Development instructions
 Clone this repository and run `npm install`.
 
-To start a server:
+To start a local dev server:
 ```
-npm run start
+npm run dev
 ```
 
 To build a minified version for production:
@@ -14,11 +14,13 @@ To build a minified version for production:
 npm run build
 ```
 
-The output will be located in `dist/index.bundle.js`.
-
+The output will be located in the `dist/` directory. To preview the production build locally:
+```
+npm run preview
+```
 
 ## Basic Usage
-Rename `dist/index.bundle.js` to something like `spectrogram.js`  and it to your project at the end of the body:
+Add `spectrogram.js` to your project at the end of the body:
 ```html
 <script type="text/javascript" src="spectrogram.js"></script>
 ```
