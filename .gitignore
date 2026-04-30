@@ -3,3 +3,5 @@ dist/
 .DS_Store
 _site/
 .vite/
+.claude/
+public/
