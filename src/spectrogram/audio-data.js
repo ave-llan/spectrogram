@@ -1,4 +1,3 @@
-import {FrequencyData} from './frequency-data.js'
 import {FastFrequencyAnalyzer} from './fast-frequency-analyzer.js'
 
 class AudioData {
@@ -55,63 +54,13 @@ class AudioData {
     maxFrequency = 44100 / 2,
     smoothingTimeConstant = 0.5,
   } = {}) {
-
-    // const fastFrequencyAnalyzer = new FastFrequencyAnalyzer(this.buffer)
-    // return fastFrequencyAnalyzer.getFrequencyData({
-    //   sampleTimeLength,
-    //   fftSize,
-    //   maxFrequency,
-    //   smoothingTimeConstant,
-    // })
-
-    const offlineContext = new OfflineAudioContext(
-      this.numberOfChannels,
-      this.length,
-      this.sampleRate)
-    const audioBufferSource = offlineContext.createBufferSource()
-    audioBufferSource.buffer = this.buffer
-
-    const analyser = offlineContext.createAnalyser()
-    audioBufferSource.connect(analyser)
-    const numSamples = Math.floor(
-      audioBufferSource.buffer.duration / sampleTimeLength)
-    analyser.fftSize = fftSize
-    analyser.smoothingTimeConstant = smoothingTimeConstant
-
-    // Prep frequencyData array
-    maxFrequency = Math.min(this.sampleRate / 2, maxFrequency)
-    const frequencyData = new Array(numSamples)
-    const frequencyBandSize = (this.sampleRate / 2) /
-      analyser.frequencyBinCount
-    const frequencyBinCount = Math.min(
-      analyser.frequencyBinCount,
-      Math.ceil(maxFrequency / frequencyBandSize))
-    for (let i = 0; i < numSamples; i++) {
-      frequencyData[i] = new Uint8Array(frequencyBinCount)
-    }
-    return new Promise((resolve) => {
-      for (let frameIndex = 0; frameIndex < numSamples; frameIndex++) {
-        offlineContext.suspend(sampleTimeLength * frameIndex).then(() => {
-          console.log('suspend frameIndex: ', frameIndex)
-          analyser.getByteFrequencyData(frequencyData[frameIndex])
-          offlineContext.resume()
-          // After populating last data, resolve promise.
-          if (frameIndex + 1 === numSamples) {
-            resolve(new FrequencyData({
-              data         : frequencyData,
-              minFrequency : 0,
-              maxFrequency,
-              frequencyBandSize,
-              frequencyBinCount,
-              sampleTimeLength,
-              duration     : audioBufferSource.buffer.duration,
-            }))
-          }
-        })
-      }
-      offlineContext.startRendering()
-      audioBufferSource.start()
-    })  
+    const analyzer = new FastFrequencyAnalyzer(this.buffer)
+    return analyzer.getFrequencyData({
+      sampleTimeLength,
+      fftSize,
+      maxFrequency,
+      smoothingTimeConstant,
+    })
   }
 
   /**
